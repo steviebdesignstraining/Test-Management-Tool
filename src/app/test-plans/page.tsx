@@ -27,7 +27,7 @@ export default function TestPlansPage() {
           <tbody className="divide-y divide-[#C9D0D8]">
             <tr className="hover:bg-[#EDF0F3]">
               <td className="px-4 py-3">
-                <div className="text-[#1B2430] font-medium"><Link href="#" className="text-[#1F6F8B] hover:underline">Q4 Regression</Link></div>
+                <div className="text-[#1B2430] font-medium"><Link href="/test-plans/tp-001" className="text-[#1F6F8B] hover:underline">Q4 Regression</Link></div>
                 <div className="text-xs text-[#5B6675]">Sprint 14 • Regression cycle</div>
               </td>
               <td className="px-4 py-3">

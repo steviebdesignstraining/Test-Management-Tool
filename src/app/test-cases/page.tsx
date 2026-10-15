@@ -56,8 +56,8 @@ export default function TestCasesPage() {
             <tbody className="divide-y divide-[#C9D0D8]">
               <tr className="hover:bg-[#EDF0F3]">
                 <td className="px-4 py-3"><input type="checkbox" /></td>
-                <td className="px-4 py-3 text-[#1B2430] font-medium">TC-001</td>
-                <td className="px-4 py-3"><Link href="#" className="text-[#1F6F8B] hover:underline">Login with valid credentials</Link></td>
+                <td className="px-4 py-3 text-[#1B2430] font-medium"><Link href="/test-cases/TC-001" className="text-[#1F6F8B] hover:underline">TC-001</Link></td>
+                <td className="px-4 py-3"><Link href="/test-cases/TC-001" className="text-[#1F6F8B] hover:underline">Login with valid credentials</Link></td>
                 <td className="px-4 py-3 text-[#5B6675]">Positive</td>
                 <td className="px-4 py-3"><span className="badge status-pass">High</span></td>
                 <td className="px-4 py-3"><span className="badge status-neutral">Draft</span></td>

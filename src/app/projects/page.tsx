@@ -29,7 +29,7 @@ export default function ProjectsPage() {
           <tbody className="divide-y divide-[#C9D0D8]">
             <tr className="hover:bg-[#EDF0F3]">
               <td className="px-4 py-3 text-[#1B2430] font-medium">PRJ-001</td>
-              <td className="px-4 py-3"><Link href="#" className="text-[#1F6F8B] hover:underline">Checkout Web</Link></td>
+              <td className="px-4 py-3"><Link href="/projects/checkout-web" className="text-[#1F6F8B] hover:underline">Checkout Web</Link></td>
               <td className="px-4 py-3 text-[#5B6675]">Alex Rivera</td>
               <td className="px-4 py-3 text-[#5B6675]">124</td>
               <td className="px-4 py-3 text-[#5B6675]">2h ago</td>
@@ -38,7 +38,7 @@ export default function ProjectsPage() {
             </tr>
             <tr className="hover:bg-[#EDF0F3]">
               <td className="px-4 py-3 text-[#1B2430] font-medium">PRJ-002</td>
-              <td className="px-4 py-3"><Link href="#" className="text-[#1F6F8B] hover:underline">Mobile API</Link></td>
+              <td className="px-4 py-3"><Link href="/projects/mobile-api" className="text-[#1F6F8B] hover:underline">Mobile API</Link></td>
               <td className="px-4 py-3 text-[#5B6675]">Sam Chen</td>
               <td className="px-4 py-3 text-[#5B6675]">68</td>
               <td className="px-4 py-3 text-[#5B6675]">1d ago</td>

@@ -26,12 +26,12 @@ export default function DefectsPage() {
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
             <tr className="hover:bg-[#EDF0F3]">
-              <td className="px-4 py-3"><Link href="#" className="text-[#1F6F8B] hover:underline font-medium">Login fails on Safari</Link></td>
+              <td className="px-4 py-3"><Link href="/defects/D-004" className="text-[#1F6F8B] hover:underline font-medium">Login fails on Safari</Link></td>
               <td className="px-4 py-3"><span className="badge status-fail">High</span></td>
               <td className="px-4 py-3"><span className="badge status-neutral">Open</span></td>
               <td className="px-4 py-3 text-[#5B6675]">Sam Chen</td>
               <td className="px-4 py-3 text-right">
-                <Link href="#" className="text-[#5B6675] hover:text-[#1F6F8B] text-sm">TC-001</Link>
+                <Link href="/test-cases/TC-001" className="text-[#5B6675] hover:text-[#1F6F8B] text-sm">TC-001</Link>
               </td>
             </tr>
           </tbody>
