@@ -1,24 +1,27 @@
 import Link from "next/link";
+import PageHeader from "@/components/PageHeader";
 
 export default function TestPlansPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[#1B2430]">Test Plans</h1>
-        <button className="bg-[#1F6F8B] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#134F63]">
-          New test plan
-        </button>
-      </div>
+      <PageHeader
+        breadcrumb="Test Plans"
+        title="Test Plans"
+        description="Organise test cases into plans and track progress."
+        actions={
+          <button className="btn-primary">New test plan</button>
+        }
+      />
 
       <div className="bg-white border border-[#C9D0D8] rounded overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="px-4 py-3 font-medium text-[#5B6675]">Plan</th>
-              <th className="px-4 py-3 font-medium text-[#5B6675]">Progress</th>
-              <th className="px-4 py-3 font-medium text-[#5B6675]">Scope</th>
-              <th className="px-4 py-3 font-medium text-[#5B6675]">Owner</th>
-              <th className="px-4 py-3 font-medium text-[#5B6675] text-right">Actions</th>
+              <th className="table-header">Plan</th>
+              <th className="table-header">Progress</th>
+              <th className="table-header">Scope</th>
+              <th className="table-header">Owner</th>
+              <th className="table-header text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
@@ -31,20 +34,20 @@ export default function TestPlansPage() {
                 <div className="w-full bg-[#EDF0F3] h-2 rounded-full">
                   <div className="bg-[#1F6F8B] h-full rounded-full" style={{ width: "70%" }} />
                 </div>
-                <div className="text-[10px] text-[#5B6675] mt-1">70% (14/20)</div>
+                <div className="text-[10px] text-[#5B6675] mt-1">70% (14/20) <span className="sample-badge">Sample data</span></div>
               </td>
               <td className="px-4 py-3 text-[#5B6675]">Checkout, Payments</td>
               <td className="px-4 py-3 text-[#5B6675]">Sam Chen</td>
               <td className="px-4 py-3 text-right">
-                <Link href="#" className="text-[#5B6675] hover:text-[#1F6F8B] mr-3 text-sm">Export summary</Link>
-                <Link href="#" className="text-[#5B6675] hover:text-[#1F6F8B] text-sm">Snapshot</Link>
+                <Link href="#" className="btn-link mr-3">Export summary</Link>
+                <Link href="#" className="btn-link">Snapshot</Link>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div className="bg-white border border-[#C9D0D8] rounded p-5">
+      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
         <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Plan summary</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="space-y-1">

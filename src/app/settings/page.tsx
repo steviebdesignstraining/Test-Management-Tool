@@ -1,9 +1,15 @@
+import PageHeader from "@/components/PageHeader";
+
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-[#1B2430]">Settings</h1>
+      <PageHeader
+        breadcrumb="Settings"
+        title="Settings"
+        description="Configure AI, quality gates and workspace options."
+      />
 
-      <div className="bg-white border border-[#C9D0D8] rounded p-6">
+      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
         <h2 className="text-sm font-semibold text-[#1B2430] mb-4">AI and data use</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -20,7 +26,7 @@ export default function SettingsPage() {
               <p className="text-sm text-[#1B2430]">Auto-complete policy</p>
               <p className="text-xs text-[#5B6675]">Off by default — requires human approval.</p>
             </div>
-            <select className="border border-[#C9D0D8] rounded px-3 py-2 text-sm bg-white">
+            <select className="input">
               <option>Off (manual approval)</option>
               <option>On (auto-approve high confidence)</option>
             </select>
@@ -30,20 +36,20 @@ export default function SettingsPage() {
               <p className="text-sm text-[#1B2430]">Confidence threshold</p>
               <p className="text-xs text-[#5B6675]">Minimum confidence for AI suggestions.</p>
             </div>
-            <input type="number" className="border border-[#C9D0D8] rounded px-3 py-2 text-sm w-20" min="0" max="100" value={80} />
+            <input type="number" className="input w-20" min="0" max="100" value={80} />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[#1B2430]">Retention days</p>
               <p className="text-xs text-[#5B6675]">How long AI interaction data is kept.</p>
             </div>
-            <input type="number" className="border border-[#C9D0D8] rounded px-3 py-2 text-sm w-20" min="1" value={90} />
+            <input type="number" className="input w-20" min="1" value={90} />
           </div>
           <p className="text-xs text-[#5B6675] italic">Confidence is a prioritisation signal, not proof of correctness.</p>
         </div>
       </div>
 
-      <div className="bg-white border border-[#C9D0D8] rounded p-6">
+      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
         <h2 className="text-sm font-semibold text-[#1B2430] mb-4">Quality gates</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -51,7 +57,7 @@ export default function SettingsPage() {
               <p className="text-sm text-[#1B2430]">Minimum pass rate</p>
               <p className="text-xs text-[#5B6675]">Gate fails when pass rate drops below this.</p>
             </div>
-            <input type="number" className="border border-[#C9D0D8] rounded px-3 py-2 text-sm w-20" min="0" max="100" value={90} />
+            <input type="number" className="input w-20" min="0" max="100" value={90} />
           </div>
           <div className="flex items-center justify-between">
             <div>
@@ -65,7 +71,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-[#C9D0D8] rounded p-6">
+      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
         <h2 className="text-sm font-semibold text-[#1B2430] mb-4 text-[#8F2A20]">Danger zone</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">

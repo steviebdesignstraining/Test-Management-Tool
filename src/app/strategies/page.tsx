@@ -1,19 +1,21 @@
 import Link from "next/link";
+import PageHeader from "@/components/PageHeader";
 
 export default function StrategiesPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[#1B2430]">Test Strategies</h1>
-        <button className="bg-[#1F6F8B] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#134F63]">
-          New strategy
-        </button>
-      </div>
+      <PageHeader
+        breadcrumb="Test Strategies"
+        title="Test Strategies"
+        description="Define and approve test strategies per section."
+        actions={
+          <button className="btn-primary">New strategy</button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Section outline */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white border border-[#C9D0D8] rounded p-4">
+          <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Sections</h3>
             <ul className="space-y-2 text-sm text-[#5B6675]">
               <li>Product context</li>
@@ -32,28 +34,27 @@ export default function StrategiesPage() {
           </div>
         </div>
 
-        {/* Editor */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white border border-[#C9D0D8] rounded p-4">
+          <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Editor — Product context</h3>
-            <textarea className="w-full border border-[#C9D0D8] rounded px-3 py-2 text-sm h-64 focus:ring-2 focus:ring-[#1F6F8B] outline-none" placeholder="Describe product and system context…" />
+            <textarea className="input w-full h-64" placeholder="Describe product and system context…" />
             <div className="mt-3 flex items-center justify-between">
-              <button className="text-[#5B6675] hover:text-[#1F6F8B] text-sm underline">Save version</button>
-              <button className="bg-[#1F6F8B] text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-[#134F63]">Request review</button>
+              <button className="btn-link text-sm">Save version</button>
+              <button className="btn-primary text-xs px-3 py-1.5">Request review</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border border-[#C9D0D8] rounded p-5">
+      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
         <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Version history</h3>
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="px-4 py-2 font-medium text-[#5B6675]">Version</th>
-              <th className="px-4 py-2 font-medium text-[#5B6675]">Author</th>
-              <th className="px-4 py-2 font-medium text-[#5B6675]">Date</th>
-              <th className="px-4 py-2 font-medium text-[#5B6675] text-right">Actions</th>
+              <th className="table-header px-4 py-2">Version</th>
+              <th className="table-header px-4 py-2">Author</th>
+              <th className="table-header px-4 py-2">Date</th>
+              <th className="table-header px-4 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
@@ -62,16 +63,16 @@ export default function StrategiesPage() {
               <td className="px-4 py-2 text-[#5B6675]">QA Lead</td>
               <td className="px-4 py-2 text-[#5B6675]">Today</td>
               <td className="px-4 py-2 text-right">
-                <Link href="#" className="text-[#5B6675] hover:text-[#1F6F8B] text-sm mr-3">Compare</Link>
+                <Link href="#" className="btn-link text-sm mr-3">Compare</Link>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div className="bg-[#FAF8FD] border border-dashed border-[#6B4FA3] rounded p-4">
+      <div className="bg-[#FAF8FD] border border-dashed border-[#6B4FA3] rounded p-[28px]">
         <div className="flex items-start gap-3">
-          <span className="text-[#6B4FA3]">✦</span>
+          <span className="text-[#6B4FA3]">AI</span>
           <div>
             <p className="text-sm font-semibold text-[#1B2430] mb-1">AI review suggestion</p>
             <p className="text-xs text-[#55398C]">Consider adding performance testing criteria for checkout under load.</p>
