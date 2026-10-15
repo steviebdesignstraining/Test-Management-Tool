@@ -38,7 +38,7 @@ export default function DefectDetailPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Execution</p>
-                <p className="text-[#1B2430]"><Link href="/test-executions/ex-002" className="text-[#1F6F8B] hover:underline">EX-002</Link></p>
+                <p className="text-[#1B2430]"><Link href="/test-runs" className="text-[#1F6F8B] hover:underline">EX-002</Link></p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">CI run</p>
