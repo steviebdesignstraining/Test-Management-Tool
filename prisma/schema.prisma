@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 /// The User entity represents a user in the system.
@@ -14,6 +13,7 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?
+  passwordHash  String?
   role          String   @default("USER")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -23,6 +23,7 @@ model User {
   testExecutionsAsTester TestExecution[] @relation("TestExecution_tester")
   reportedDefects   Defect[]            @relation("Defect_reporter")
   assignedDefects   Defect[]            @relation("Defect_assignee")
+  testPlanCases     TestPlanCase[]      @relation("TestPlanCase_assignee")
 }
 
 /// An Organisation is a tenant that owns projects.
@@ -99,6 +100,7 @@ model TestCase {
   steps       TestStep[] @relation("TestStep_testCase")
   executions  TestExecution[] @relation("TestExecution_testCase")
   defects     Defect[]   @relation("Defect_testCase")
+  planCases   TestPlanCase[] @relation("TestPlanCase_testCase")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -110,9 +112,10 @@ model TestStep {
   testCaseId  String
   action      String
   expectedResult String
-  data        String? // optional test data for the step
-  attachments String[] // optional, we'll store as array of strings (URLs or file paths)
-  position    Int // to order the steps
+  data        String?
+  attachments String[]
+  position    Int
+  results     TestStepResult[] @relation("TestStepResult_testStep")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

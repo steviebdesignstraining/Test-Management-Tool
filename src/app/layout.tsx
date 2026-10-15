@@ -1,29 +1,29 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "TestFlow - Test Management Platform",
-  description: "Manual and automated test management, CI/CD analytics, and AI-assisted quality insights",
+  title: "TestHub - Test Management Platform",
+  description: "AI-assisted test management, CI/CD results, defects and quality insights",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-full flex bg-[#F5F7F9] text-[#1B2430] pl-[232px]">
+        <Sidebar collapsed={false} />
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">{children}</main>
+      </body>
     </html>
   );
 }
