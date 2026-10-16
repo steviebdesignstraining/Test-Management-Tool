@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import "./globals.css";
-import TopBar from "@/components/TopBar";
-import Sidebar from "@/components/Sidebar";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "TestHub - Test Management Platform",
@@ -16,15 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex bg-[#F5F7F9] text-[#1B2430] pl-[232px]">
-        <Suspense fallback={null}>
-          <Sidebar />
-        </Suspense>
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
-          <main className="flex-1 overflow-y-auto p-[28px]">{children}</main>
-        </div>
-      </body>
+      <AppShell>{children}</AppShell>
     </html>
   );
 }

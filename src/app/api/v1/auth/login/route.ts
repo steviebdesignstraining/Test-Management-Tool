@@ -1,14 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
-
-const JWT_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
+import { createSession, rateLimit, auditLog, getClientIp } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const limit = rateLimit(`login:${ip}`, { limit: 5, windowMs: 60 * 1000 });
+  if (!limit.allowed) {
+    return error("Too many requests. Try again later.", 429);
+  }
+
   try {
-    const { email, password } = await req.json();
+    const { email, password, keepSignedIn } = await req.json();
 
     if (!email || !password) {
       return error("Email and password are required", 400);
@@ -16,22 +19,49 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.passwordHash) {
-      return error("Invalid credentials", 401);
+      await auditLog({
+        action: "USER.LOGIN_FAILED",
+        entity: "User",
+        metadata: { email, reason: "invalid_credentials" },
+        ip,
+      });
+      return error("Invalid email or password.", 401);
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      return error("Invalid credentials", 401);
+      await auditLog({
+        userId: user.id,
+        action: "USER.LOGIN_FAILED",
+        entity: "User",
+        entityId: user.id,
+        metadata: { email, reason: "invalid_credentials" },
+        ip,
+      });
+      return error("Invalid email or password.", 401);
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    if (!user.emailVerified) {
+      await auditLog({
+        userId: user.id,
+        action: "USER.LOGIN_BLOCKED_UNVERIFIED",
+        entity: "User",
+        entityId: user.id,
+        metadata: { email },
+        ip,
+      });
+      return error("Please verify your email before signing in.", 403);
+    }
 
-    (await cookies()).set("session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
+    await createSession(user.id, user.role, keepSignedIn === true);
+
+    await auditLog({
+      userId: user.id,
+      action: "USER.LOGIN",
+      entity: "User",
+      entityId: user.id,
+      metadata: { email },
+      ip,
     });
 
     return json({

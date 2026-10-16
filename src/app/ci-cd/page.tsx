@@ -1,7 +1,14 @@
-import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import PageHeader from "@/components/PageHeader";
 
-export default function CiCdPage() {
+export default async function CiCdPage() {
+  const [executions] = await Promise.all([
+    prisma.testExecution.findMany(),
+  ]);
+
+  const total = executions.length;
+  const passed = executions.filter((e) => e.status === "PASSED").length;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -28,16 +35,13 @@ export default function CiCdPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
-            <tr className="hover:bg-[#EDF0F3]">
-              <td className="px-4 py-3 text-[#1B2430] font-medium">CI Tests</td>
-              <td className="px-4 py-3 text-[#5B6675]">main</td>
-              <td className="px-4 py-3 text-[#5B6675] font-mono text-xs">a1b2c3d</td>
-              <td className="px-4 py-3 text-[#5B6675]">Alex Rivera</td>
-              <td className="px-4 py-3"><span className="badge status-pass">Passed</span></td>
-              <td className="px-4 py-3 text-[#5B6675]">42 / 42 <span className="sample-badge" style={{ marginLeft: "6px" }}>Sample</span></td>
-              <td className="px-4 py-3 text-[#5B6675]">3m 12s</td>
-              <td className="px-4 py-3 text-right"><Link href="#" className="text-[#1F6F8B] text-sm hover:underline">View report</Link></td>
-            </tr>
+            {total === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-4 py-3 text-[#5B6675] text-center">
+                  No CI runs yet.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
@@ -52,11 +56,13 @@ export default function CiCdPage() {
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-[#5B6675]">Minimum pass rate (90%)</span>
-              <span className="badge status-pass">Met</span>
+              <span className={`badge ${total > 0 && Math.round((passed / total) * 100) >= 90 ? "status-pass" : "status-neutral"}`}>
+                {total > 0 ? (Math.round((passed / total) * 100) >= 90 ? "Met" : "Failed") : "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[#5B6675]">No critical failures</span>
-              <span className="badge status-pass">Met</span>
+              <span className="badge status-neutral">—</span>
             </div>
           </div>
         </div>

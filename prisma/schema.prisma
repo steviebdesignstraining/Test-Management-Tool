@@ -8,60 +8,72 @@ datasource db {
 
 /// The User entity represents a user in the system.
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  passwordHash  String?
-  role          String   @default("USER")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  organisationMembers OrganisationMember[] @relation("organisationMembers")
-  projectMembers    ProjectMember[]      @relation("projectMembers")
-  ownedTestCases    TestCase[]           @relation("TestCase_owner")
-  testExecutionsAsTester TestExecution[] @relation("TestExecution_tester")
-  reportedDefects   Defect[]            @relation("Defect_reporter")
-  assignedDefects   Defect[]            @relation("Defect_assignee")
-  testPlanCases     TestPlanCase[]      @relation("TestPlanCase_assignee")
+  id                     String               @id @default(cuid())
+  email                  String               @unique
+  emailVerified          DateTime?
+  name                   String?
+  image                  String?
+  passwordHash           String?
+  role                   String               @default("USER")
+  githubId               String?              @unique
+  githubUsername         String?
+  githubAccessToken      String?
+  githubEmail            String?
+  avatarUrl              String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  organisationMembers    OrganisationMember[] @relation("organisationMembers")
+  projectMembers         ProjectMember[]      @relation("projectMembers")
+  ownedTestCases         TestCase[]           @relation("TestCase_owner")
+  testExecutionsAsTester TestExecution[]      @relation("TestExecution_tester")
+  reportedDefects        Defect[]             @relation("Defect_reporter")
+  assignedDefects        Defect[]             @relation("Defect_assignee")
+  testPlanCases          TestPlanCase[]       @relation("TestPlanCase_assignee")
+  auditLogs              AuditLog[]           @relation("auditLogs")
+  attachments            Attachment[]         @relation("attachments")
+  passwordResetTokens    PasswordResetToken[] @relation("passwordResetTokens")
+  testCaseVersions       TestCaseVersion[]    @relation("TestCaseVersion_changedBy")
+   ownedRequirements      Requirement[]        @relation("Requirement_owner")
+   userSettings           UserSettings?        @relation("UserSettings_user")
 }
 
 /// An Organisation is a tenant that owns projects.
 model Organisation {
-  id          String   @id @default(cuid())
-  name        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  members     OrganisationMember[] @relation("organisationMembers")
-  projects    Project[]            @relation("Project_organisation")
+  id        String               @id @default(cuid())
+  name      String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  members   OrganisationMember[] @relation("organisationMembers")
+  projects  Project[]            @relation("Project_organisation")
 }
 
 /// The OrganisationMember model connects users to organisations with a role.
 model OrganisationMember {
-  id           String   @id @default(cuid())
-  user         User     @relation("organisationMembers", fields: [userId], references: [id])
-  userId       String
-  organisation Organisation @relation("organisationMembers", fields: [organisationId], references: [id])
+  id             String       @id @default(cuid())
+  user           User         @relation("organisationMembers", fields: [userId], references: [id])
+  userId         String
+  organisation   Organisation @relation("organisationMembers", fields: [organisationId], references: [id])
   organisationId String
-  role         String   @default("MEMBER")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role           String       @default("MEMBER")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@unique([userId, organisationId])
 }
 
 /// A Project belongs to an organisation and contains test cases, plans, etc.
 model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  organisation Organisation @relation("Project_organisation", fields: [organisationId], references: [id])
+  id             String          @id @default(cuid())
+  name           String
+  description    String?
+  organisation   Organisation    @relation("Project_organisation", fields: [organisationId], references: [id])
   organisationId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  members     ProjectMember[]   @relation("projectMembers")
-  testCases   TestCase[]        @relation("TestCase_project")
-  testPlans   TestPlan[]        @relation("TestPlan_project")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  members        ProjectMember[] @relation("projectMembers")
+  testCases      TestCase[]      @relation("TestCase_project")
+  testPlans      TestPlan[]      @relation("TestPlan_project")
+  requirements   Requirement[]   @relation("Requirement_project")
 }
 
 /// The ProjectMember model connects users to projects with a role.
@@ -80,143 +92,279 @@ model ProjectMember {
 
 /// A TestCase represents a manual test case.
 model TestCase {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  title       String
-  description String?
-  objective   String?
-  preconditions String?
-  testData    String?
-  priority    String   @default("MEDIUM")
-  severity    String   @default("MEDIUM")
-  component   String?
-  labels      String[] // We'll use a string array for labels; in Postgres we can use text[]
-  owner       User     @relation("TestCase_owner", fields: [ownerId], references: [id])
-  ownerId     String
-  project     Project  @relation("TestCase_project", fields: [projectId], references: [id])
-  projectId   String
-  status      String   @default("DRAFT")
+  id                String          @id @default(cuid())
+  key               String          @unique
+  title             String
+  description       String?
+  objective         String?
+  preconditions     String?
+  testData          String?
+  testType          String? // e.g. "FUNCTIONAL", "UI", "API", "DATABASE", "PERFORMANCE", "SECURITY", "ACCESSIBILITY"
+  gherkinText       String? // Gherkin scenario text for BDD tests
+  priority          String          @default("MEDIUM")
+  severity          String          @default("MEDIUM")
+  component         String?
+  labels            String[] // We'll use a string array for labels; in Postgres we can use text[]
+  owner             User            @relation("TestCase_owner", fields: [ownerId], references: [id])
+  ownerId           String
+  project           Project         @relation("TestCase_project", fields: [projectId], references: [id])
+  projectId         String
+  status            String          @default("DRAFT")
   estimatedDuration Int? // in minutes
-  steps       TestStep[] @relation("TestStep_testCase")
-  executions  TestExecution[] @relation("TestExecution_testCase")
-  defects     Defect[]   @relation("Defect_testCase")
-  planCases   TestPlanCase[] @relation("TestPlanCase_testCase")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  steps             TestStep[]      @relation("TestStep_testCase")
+  executions        TestExecution[] @relation("TestExecution_testCase")
+  defects           Defect[]        @relation("Defect_testCase")
+  planCases         TestPlanCase[]  @relation("TestPlanCase_testCase")
+  attachments       Attachment[]    @relation("testCaseAttachments")
+  requirementLinks  RequirementTestCase[] @relation("RequirementTestCase_testCase")
+  versions          TestCaseVersion[] @relation("TestCaseVersion_testCase")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }
 
 /// A TestStep represents a step within a test case.
 model TestStep {
-  id          String   @id @default(cuid())
-  testCase    TestCase @relation("TestStep_testCase", fields: [testCaseId], references: [id])
-  testCaseId  String
-  action      String
+  id             String           @id @default(cuid())
+  testCase       TestCase         @relation("TestStep_testCase", fields: [testCaseId], references: [id])
+  testCaseId     String
+  action         String
   expectedResult String
-  data        String?
-  attachments String[]
-  position    Int
-  results     TestStepResult[] @relation("TestStepResult_testStep")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  data           String?
+  attachments    String[]
+  position       Int
+  results        TestStepResult[] @relation("TestStepResult_testStep")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@unique([testCaseId, position])
 }
 
 /// A TestExecution represents a single execution of a test case (manual or automated).
 model TestExecution {
-  id          String   @id @default(cuid())
-  testCase    TestCase @relation("TestExecution_testCase", fields: [testCaseId], references: [id])
-  testCaseId  String
-  status      String   @default("NOT_RUN")
+  id           String           @id @default(cuid())
+  testCase     TestCase         @relation("TestExecution_testCase", fields: [testCaseId], references: [id])
+  testCaseId   String
+  status       String           @default("NOT_RUN")
   actualResult String?
-  tester      User     @relation("TestExecution_tester", fields: [testerId], references: [id])
-  testerId    String
-  environment String?
-  build       String?
-  startedAt   DateTime?
-  endedAt     DateTime?
-  stepResults TestStepResult[] @relation("TestStepResult_testExecution")
-  defects     Defect[]     @relation("Defect_testExecution")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tester       User             @relation("TestExecution_tester", fields: [testerId], references: [id])
+  testerId     String
+  environment  String?
+  build        String?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  stepResults  TestStepResult[] @relation("TestStepResult_testExecution")
+  defects      Defect[]         @relation("Defect_testExecution")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 }
 
 /// A TestStepResult represents the result of a specific step in a test execution.
 model TestStepResult {
-  id          String   @id @default(cuid())
-  testExecution TestExecution @relation("TestStepResult_testExecution", fields: [testExecutionId], references: [id])
+  id              String        @id @default(cuid())
+  testExecution   TestExecution @relation("TestStepResult_testExecution", fields: [testExecutionId], references: [id])
   testExecutionId String
-  testStep    TestStep   @relation("TestStepResult_testStep", fields: [testStepId], references: [id])
-  testStepId  String
-  status      String   @default("NOT_RUN")
-  actualResult String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  testStep        TestStep      @relation("TestStepResult_testStep", fields: [testStepId], references: [id])
+  testStepId      String
+  status          String        @default("NOT_RUN")
+  actualResult    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 /// A Defect represents a bug or issue found during testing.
 model Defect {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
+  id               String         @id @default(cuid())
+  title            String
+  description      String?
   stepsToReproduce String?
   expectedResult   String?
   actualResult     String?
-  severity         String   @default("MEDIUM")
-  priority         String   @default("MEDIUM")
-  status           String   @default("OPEN")
-  testCase         TestCase?  @relation("Defect_testCase", fields: [testCaseId], references: [id])
+  severity         String         @default("MEDIUM")
+  priority         String         @default("MEDIUM")
+  status           String         @default("OPEN")
+  testCase         TestCase?      @relation("Defect_testCase", fields: [testCaseId], references: [id])
   testCaseId       String?
   testExecution    TestExecution? @relation("Defect_testExecution", fields: [testExecutionId], references: [id])
   testExecutionId  String?
-  reporter         User     @relation("Defect_reporter", fields: [reporterId], references: [id])
+  reporter         User           @relation("Defect_reporter", fields: [reporterId], references: [id])
   reporterId       String
-  assignee         User?    @relation("Defect_assignee", fields: [assigneeId], references: [id])
+  assignee         User?          @relation("Defect_assignee", fields: [assigneeId], references: [id])
   assigneeId       String?
-  environment String?
-  build       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  environment      String?
+  build            String?
+  externalTicketId   String?
+  externalTicketUrl  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 /// A TestPlan represents a collection of test cases for a specific purpose (e.g., sprint, release).
 model TestPlan {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
   description String?
-  project     Project  @relation("TestPlan_project", fields: [projectId], references: [id])
+  project     Project     @relation("TestPlan_project", fields: [projectId], references: [id])
   projectId   String
   scope       String?
   objectives  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   suites      TestSuite[] @relation("TestSuite_testPlan")
 }
 
 /// A TestSuite is a group within a test plan.
 model TestSuite {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   description String?
-  testPlan    TestPlan @relation("TestSuite_testPlan", fields: [testPlanId], references: [id])
+  testPlan    TestPlan       @relation("TestSuite_testPlan", fields: [testPlanId], references: [id])
   testPlanId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   cases       TestPlanCase[] @relation("TestPlanCase_testSuite")
 }
 
 /// A TestPlanCase is a join table that links a test case to a test suite (and thus a test plan).
 model TestPlanCase {
-  id        String   @id @default(cuid())
-  testSuite TestSuite @relation("TestPlanCase_testSuite", fields: [testSuiteId], references: [id])
+  id          String    @id @default(cuid())
+  testSuite   TestSuite @relation("TestPlanCase_testSuite", fields: [testSuiteId], references: [id])
   testSuiteId String
-  testCase  TestCase @relation("TestPlanCase_testCase", fields: [testCaseId], references: [id])
-  testCaseId String
-  position  Int
-  assignedTo User?   @relation("TestPlanCase_assignee", fields: [assigneeId], references: [id])
-  assigneeId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  testCase    TestCase  @relation("TestPlanCase_testCase", fields: [testCaseId], references: [id])
+  testCaseId  String
+  position    Int
+  assignedTo  User?     @relation("TestPlanCase_assignee", fields: [assigneeId], references: [id])
+  assigneeId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([testSuiteId, testCaseId])
+}
+
+/// Email verification token. One-time use, expires after a set window.
+model VerificationToken {
+  id         String   @id @default(uuid())
+  identifier String // email address
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// Password reset token. One-time use, expires after a set window.
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  identifier String // email address
+  token      String   @unique
+  expires    DateTime
+  user       User     @relation("passwordResetTokens", fields: [userId], references: [id])
+  userId     String
+
+  @@unique([identifier, token])
+}
+
+/// Immutable audit log entry for security-sensitive operations.
+model AuditLog {
+  id        String   @id @default(uuid())
+  user      User?    @relation("auditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  action    String // e.g. "USER.REGISTER", "USER.LOGIN", "TEST_CASE.CREATE"
+  entity    String? // e.g. "TestCase", "Project"
+  entityId  String?
+  metadata  Json? // safe, non-sensitive details
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+/// File attachment uploaded as evidence for a test case or execution.
+model Attachment {
+  id           String    @id @default(uuid())
+  filename     String // stored filesystem name
+  originalName String
+  mimeType     String
+  size         Int // bytes
+  path         String // storage path
+  uploadedBy   User      @relation("attachments", fields: [uploadedById], references: [id])
+  uploadedById String
+  testCase     TestCase? @relation("testCaseAttachments", fields: [testCaseId], references: [id])
+  testCaseId   String?
+  createdAt    DateTime  @default(now())
+}
+
+/// A TestCaseVersion represents a snapshot of a test case at a point in time.
+model TestCaseVersion {
+  id            String   @id @default(uuid())
+  testCase      TestCase @relation("TestCaseVersion_testCase", fields: [testCaseId], references: [id])
+  testCaseId    String
+  version       Int
+  key           String
+  title         String
+  description   String?
+  objective     String?
+  preconditions String?
+  priority      String
+  status        String
+  component     String?
+  testType      String?
+  gherkinText   String?
+  changedBy     User?    @relation("TestCaseVersion_changedBy", fields: [changedById], references: [id], onDelete: SetNull)
+  changedById   String?
+  changedAt     DateTime @default(now())
+}
+
+/// A Requirement represents a business or functional requirement.
+model Requirement {
+  id             String          @id @default(cuid())
+  key            String          @unique
+  title          String
+  description    String?
+  type           String          @default("FUNCTIONAL")
+  priority       String          @default("MEDIUM")
+  status         String          @default("DRAFT")
+  owner          User            @relation("Requirement_owner", fields: [ownerId], references: [id])
+  ownerId        String
+  project        Project         @relation("Requirement_project", fields: [projectId], references: [id])
+  projectId      String
+  testCases      RequirementTestCase[] @relation("RequirementTestCase_requirement")
+  acceptanceCriteria RequirementAcceptanceCriteria[] @relation("RequirementAcceptanceCriteria_requirement")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+/// Links a requirement to one or more test cases for traceability.
+model RequirementTestCase {
+  id           String    @id @default(cuid())
+  requirement  Requirement @relation("RequirementTestCase_requirement", fields: [requirementId], references: [id])
+  requirementId String
+  testCase     TestCase    @relation("RequirementTestCase_testCase", fields: [testCaseId], references: [id])
+  testCaseId   String
+
+  @@unique([requirementId, testCaseId])
+}
+
+/// Acceptance criteria belonging to a requirement.
+model RequirementAcceptanceCriteria {
+  id          String   @id @default(cuid())
+  requirement Requirement @relation("RequirementAcceptanceCriteria_requirement", fields: [requirementId], references: [id])
+  requirementId String
+  text        String
+  position    Int
+  createdAt   DateTime @default(now())
+}
+
+/// User-specific settings persisted per user.
+model UserSettings {
+  id                      String   @id @default(cuid())
+  user                    User     @relation("UserSettings_user", fields: [userId], references: [id], onDelete: Cascade)
+  userId                  String   @unique
+  aiEnabled               Boolean  @default(true)
+  autoComplete            String   @default("OFF")
+  confidenceThreshold     Int      @default(80)
+  retentionDays           Int      @default(90)
+  minPassRate             Int      @default(90)
+  blockOnCriticalFailures Boolean  @default(true)
+  aiProvider              String?  @default("gemini")
+  aiModel                 String?  @default("gemini-flash-lite-latest")
+  integrationConfigs      Json? // Stores Jira, Azure DevOps, Trello connection details
+  updatedAt               DateTime @updatedAt
 }

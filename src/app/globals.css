@@ -53,9 +53,14 @@ body {
   color: var(--color-flaky-text);
 }
 
-.status-neutral {
+ .status-neutral {
   background-color: var(--color-neutral-bg);
   color: var(--color-neutral-text);
+}
+
+.status-accent {
+  background-color: var(--color-ai-bg);
+  color: var(--color-ai-border);
 }
 
 .ai-box {
@@ -71,14 +76,24 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s;
-  height: 40px;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  color: var(--color-ink);
 }
 
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  padding: 0.5rem 0.875rem;
   background-color: var(--color-accent);
   color: #FFFFFF;
+  border: 1px solid var(--color-accent);
 }
 
 .btn-primary:hover {
@@ -86,18 +101,35 @@ body {
 }
 
 .btn-outline {
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  background-color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  background-color: transparent;
 }
 
 .btn-outline:hover {
-  background-color: #EDF0F3;
+  background-color: var(--color-accent-tint);
 }
 
 .btn-destructive {
-  border: 1px solid var(--color-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--color-fail-text);
   color: var(--color-fail-text);
+  background-color: transparent;
 }
 
 .btn-destructive:hover {
@@ -105,32 +137,39 @@ body {
 }
 
 .btn-link {
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  padding: 0.5rem 0.875rem;
   border: none;
-  padding: 0;
-  color: var(--color-muted);
+  background: transparent;
+  color: var(--color-accent);
   text-decoration: underline;
 }
 
 .btn-link:hover {
-  color: var(--color-accent);
+  color: var(--color-accent-dark);
 }
 
 .input {
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
+  color: var(--color-ink);
   outline: none;
   height: 40px;
+  width: 100%;
 }
 
 .input:focus {
-  ring-color: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-tint);
 }
 
 .page-padding {
@@ -181,4 +220,58 @@ body {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-muted);
+}
+
+.card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.75rem;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.table-row-hover {
+  transition: background-color 0.15s ease;
+}
+
+.btn {
+  transition: all 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.progress-bar-fill {
+  transition: width 0.4s ease-out;
 }

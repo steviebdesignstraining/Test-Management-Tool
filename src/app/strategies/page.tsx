@@ -51,18 +51,18 @@ export default function StrategiesPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="table-header px-4 py-2">Version</th>
-              <th className="table-header px-4 py-2">Author</th>
-              <th className="table-header px-4 py-2">Date</th>
-              <th className="table-header px-4 py-2 text-right">Actions</th>
+              <th className="table-header px-4 py-3">Version</th>
+              <th className="table-header px-4 py-3">Author</th>
+              <th className="table-header px-4 py-3">Date</th>
+              <th className="table-header px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
             <tr>
-              <td className="px-4 py-2 text-[#1B2430]">v1.0</td>
-              <td className="px-4 py-2 text-[#5B6675]">QA Lead</td>
-              <td className="px-4 py-2 text-[#5B6675]">Today</td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-[#1B2430]">v1.0</td>
+              <td className="px-4 py-3 text-[#5B6675]">QA Lead</td>
+              <td className="px-4 py-3 text-[#5B6675]">Today</td>
+              <td className="px-4 py-3 text-right">
                 <Link href="#" className="btn-link text-sm mr-3">Compare</Link>
               </td>
             </tr>

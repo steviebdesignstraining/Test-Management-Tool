@@ -74,6 +74,16 @@ AWS_SECRET_ACCESS_KEY="CHANGE_ME"
 AWS_S3_BUCKET="CHANGE_ME"
 AWS_REGION="us-east-1"
 
+# SMTP Email (required for email verification and password reset)
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_USER="CHANGE_ME"
+SMTP_PASS="CHANGE_ME"
+SMTP_FROM="noreply@example.com"
+
+# Encryption key for sensitive data (OAuth tokens)
+ENCRYPTION_KEY=$(rand_hex 32)
+
 cat > "$ENV_FILE" << EOF
 # =============================================================================
 # Test Management Tool - Environment Variables
@@ -99,6 +109,11 @@ GITHUB_APP_CLIENT_SECRET="${GITHUB_APP_CLIENT_SECRET}"
 GITHUB_APP_PRIVATE_KEY="${GITHUB_APP_PRIVATE_KEY}"
 GITHUB_APP_WEBHOOK_SECRET="${GITHUB_APP_WEBHOOK_SECRET}"
 
+# --- GitHub OAuth ---
+GITHUB_CLIENT_ID="${GITHUB_APP_CLIENT_ID}"
+GITHUB_CLIENT_SECRET="${GITHUB_APP_CLIENT_SECRET}"
+GITHUB_CALLBACK_URL="http://localhost:3001/api/v1/auth/github/callback"
+
 # --- Jira ---
 JIRA_BASE_URL="${JIRA_BASE_URL}"
 JIRA_EMAIL="${JIRA_EMAIL}"
@@ -120,13 +135,33 @@ AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
 AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
 AWS_S3_BUCKET="${AWS_S3_BUCKET}"
 AWS_REGION="${AWS_REGION}"
+
+# --- SMTP Email ---
+SMTP_HOST="${SMTP_HOST}"
+SMTP_PORT="${SMTP_PORT}"
+SMTP_USER="${SMTP_USER}"
+SMTP_PASS="${SMTP_PASS}"
+SMTP_FROM="${SMTP_FROM}"
+
+# --- Encryption key for sensitive data ---
+ENCRYPTION_KEY="${ENCRYPTION_KEY}"
 EOF
 
 echo "Secrets written to $ENV_FILE"
 echo ""
 echo "IMPORTANT NEXT STEPS:"
 echo "1. Replace all CHANGE_ME values with real credentials."
-echo "2. Run 'neon init' and 'neon deploy' to provision your Neon database."
+echo "2. Add the following secrets to your GitHub repository or CI/CD platform:"
+echo "   - DATABASE_URL"
+echo "   - DATABASE_URL_UNPOOLED"
+echo "   - AUTH_SECRET"
+echo "   - GITHUB_APP_PRIVATE_KEY"
+echo "   - GITHUB_APP_CLIENT_SECRET"
+echo "   - GITHUB_APP_WEBHOOK_SECRET"
+echo "   - JIRA_API_TOKEN"
+echo "   - AZURE_DEVOPS_PERSONAL_ACCESS_TOKEN"
+echo "   - AWS_SECRET_ACCESS_KEY"
+echo "   - ENCRYPTION_KEY"
 echo "3. Run 'npm run db:migrate' (or equivalent) to apply migrations."
 echo "4. Run 'npm run dev' to start the application."
 echo ""

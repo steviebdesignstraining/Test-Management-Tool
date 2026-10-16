@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/.playwright/
 
 # next.js
 /.next/
@@ -72,3 +75,19 @@ output.txt
 
 # dist
 dist/
+
+# uploaded files (attachments, evidence, etc.)
+/uploads/
+
+# agent manager state (contains session IDs and worktree paths)
+.kilo/agent-manager.json
+
+# local secrets and temporary credential files
+/secrets/
+/secrets.local.json
+/.secrets/
+
+# local database (if sqlite is used)
+/*.db
+/*.sqlite
+/*.sqlite3

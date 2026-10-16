@@ -21,11 +21,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { title, description, testCaseId, reporterId, severity, priority } = await req.json();
+    const { title, description, testCaseId, reporterId, severity, priority, externalTicketId, externalTicketUrl } = await req.json();
     if (!title || !reporterId) return error("Title and reporterId required", 400);
 
     const defect = await prisma.defect.create({
-      data: { title, description, testCaseId, reporterId, severity, priority },
+      data: {
+        title, description, testCaseId, reporterId, severity, priority,
+        externalTicketId: externalTicketId || null,
+        externalTicketUrl: externalTicketUrl || null,
+      },
     });
     return json(defect, 201);
   } catch {

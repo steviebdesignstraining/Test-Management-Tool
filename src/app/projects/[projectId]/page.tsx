@@ -1,15 +1,36 @@
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 
-export default function ProjectDetailPage() {
+export default async function ProjectDetailPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      testCases: { include: { owner: true, steps: true } },
+      members: { include: { user: true } },
+      organisation: true,
+    },
+  });
+
+  if (!project) {
+    return <div className="p-[28px]">Project not found.</div>;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         breadcrumb="Projects"
-        title="Checkout Web — Project detail"
-        description="PRJ-001 • Owned by Alex Rivera"
+        title={project.name + " — Project detail"}
+        description={`PRJ-${project.id.slice(-4).toUpperCase()} • Owned by ${project.organisation?.name}`}
         actions={
-          <Link href="#" className="btn-link text-sm">Edit project</Link>
+          <Link href="/projects" className="btn-link text-sm">
+            Back to projects
+          </Link>
         }
       />
 
@@ -17,39 +38,39 @@ export default function ProjectDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Overview</h2>
-            <p className="text-sm text-[#5B6675]">
-              Checkout Web is the primary customer-facing web application. This project covers
-              manual and automated testing for the checkout flow, payment processing, and user
-              account management.
-            </p>
+            <p className="text-sm text-[#5B6675]">{project.description || "No description."}</p>
           </div>
 
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Test cases</h2>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#F5F7F9]">
-                <tr>
-                  <th className="table-header px-4 py-2">Key</th>
-                  <th className="table-header px-4 py-2">Title</th>
-                  <th className="table-header px-4 py-2">Status</th>
-                  <th className="table-header px-4 py-2 text-right">Automation</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#C9D0D8]">
-                <tr>
-                  <td className="px-4 py-2 text-[#1B2430] font-medium">TC-001</td>
-                  <td className="px-4 py-2"><Link href="/test-cases/TC-001" className="text-[#1F6F8B] hover:underline">Login with valid credentials</Link></td>
-                  <td className="px-4 py-2"><span className="badge status-neutral">Draft</span></td>
-                  <td className="px-4 py-2 text-[#5B6675] text-right">Not mapped</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2 text-[#1B2430] font-medium">TC-002</td>
-                  <td className="px-4 py-2"><Link href="/test-cases/TC-002" className="text-[#1F6F8B] hover:underline">Checkout with valid card</Link></td>
-                  <td className="px-4 py-2"><span className="badge status-neutral">Draft</span></td>
-                  <td className="px-4 py-2 text-[#5B6675] text-right">Not mapped</td>
-                </tr>
-              </tbody>
-            </table>
+            {project.testCases.length === 0 ? (
+              <p className="text-sm text-[#5B6675]">No test cases yet.</p>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#F5F7F9]">
+                  <tr>
+                    <th className="table-header px-4 py-3">Key</th>
+                    <th className="table-header px-4 py-3">Title</th>
+                    <th className="table-header px-4 py-3">Status</th>
+                    <th className="table-header px-4 py-3 text-right">Automation</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#C9D0D8]">
+                  {project.testCases.map((tc) => (
+                    <tr key={tc.id}>
+                      <td className="px-4 py-3 text-[#1B2430] font-medium">{tc.key}</td>
+                      <td className="px-4 py-3">
+                        <Link href={`/test-cases/${tc.id}`} className="text-[#1F6F8B] hover:underline">
+                          {tc.title}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3"><span className="badge status-neutral">{tc.status}</span></td>
+                      <td className="px-4 py-3 text-[#5B6675] text-right">Not mapped</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
@@ -59,43 +80,37 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Key</p>
-                <p className="text-[#1B2430] font-medium">PRJ-001</p>
+                <p className="text-[#1B2430] font-medium">PRJ-{project.id.slice(-4).toUpperCase()}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Owner</p>
-                <p className="text-[#5B6675]">Alex Rivera</p>
+                <p className="text-[#5B6675]">{project.organisation?.name}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test cases</p>
-                <p className="text-[#5B6675]"><span className="sample-badge">Sample data</span> 124</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Last run</p>
-                <p className="text-[#5B6675]">2h ago</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Pass rate</p>
-                <p className="text-[#5B6675]"><span className="sample-badge">Sample data</span> 87%</p>
+                <p className="text-[#5B6675]">{project.testCases.length}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Members</p>
-                <p className="text-[#5B6675]">4</p>
+                <p className="text-[#5B6675]">{project.members.length}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Members</h3>
-            <ul className="space-y-2 text-sm text-[#5B6675]">
-              <li className="flex justify-between">
-                <span>Alex Rivera</span>
-                <span className="text-[#1B2430] font-medium">Owner</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Sam Chen</span>
-                <span className="text-[#1B2430] font-medium">QA Lead</span>
-              </li>
-            </ul>
+            {project.members.length === 0 ? (
+              <p className="text-sm text-[#5B6675]">No members.</p>
+            ) : (
+              <ul className="space-y-2 text-sm text-[#5B6675]">
+                {project.members.map((m) => (
+                  <li key={m.id} className="flex justify-between">
+                    <span>{m.user?.name || "—"}</span>
+                    <span className="text-[#1B2430] font-medium">{m.role}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

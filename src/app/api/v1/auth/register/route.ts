@@ -1,12 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { createSession, generateToken, rateLimit, auditLog, getClientIp } from "@/lib/auth";
+import { sendEmail, verificationEmailHtml, verificationEmailText } from "@/lib/email";
 
-const JWT_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
+const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const limit = rateLimit(`register:${ip}`, { limit: 3, windowMs: 60 * 60 * 1000 });
+  if (!limit.allowed) {
+    return error("Too many requests. Try again later.", 429);
+  }
+
   try {
     const { email, password, name } = await req.json();
 
@@ -25,19 +31,43 @@ export async function POST(req: Request) {
       data: { email, name, passwordHash },
     });
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = await createSession(user.id, user.role);
 
-    (await cookies()).set("session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
+    // Create email verification token (unverified until user clicks the link).
+    const verification = await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token: generateToken(),
+        expires: new Date(Date.now() + VERIFY_TTL_MS),
+      },
+    });
+
+    // Send verification email (non-blocking; registration succeeds regardless).
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
+    void sendEmail({
+      to: email,
+      subject: "Verify your email address",
+      html: verificationEmailHtml(verification.token, baseUrl),
+      text: verificationEmailText(verification.token, baseUrl),
+    });
+
+    await auditLog({
+      userId: user.id,
+      action: "USER.REGISTER",
+      entity: "User",
+      entityId: user.id,
+      metadata: { email },
+      ip,
     });
 
     return json(
-      { user: { id: user.id, email: user.email, name: user.name } },
-      201
+      {
+        user: { id: user.id, email: user.email, name: user.name },
+        emailVerified: false,
+        verificationSent: true,
+        sessionToken: token,
+      },
+      201,
     );
   } catch (err) {
     console.error("Register error:", err);

@@ -1,7 +1,6 @@
-import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 
-export default function AutomationPage() {
+export default async function AutomationPage() {
   return (
     <div className="space-y-6">
       <PageHeader
@@ -10,24 +9,21 @@ export default function AutomationPage() {
         description="Map automated scripts to manual test cases."
       />
 
-      <div className="flex border-b border-[#C9D0D8]">
-        <button className="px-4 py-3 border-b-2 border-[#1F6F8B] text-[#1F6F8B] text-sm font-medium">Repositories</button>
-        <button className="px-4 py-3 border-b-2 border-transparent text-[#5B6675] text-sm font-medium hover:text-[#1B2430]">Scripts</button>
-        <button className="px-4 py-3 border-b-2 border-transparent text-[#5B6675] text-sm font-medium hover:text-[#1B2430]">Mappings</button>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
           <p className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Mapped</p>
-          <p className="text-3xl font-semibold text-[#1B2430]">14 <span className="sample-badge">Sample data</span></p>
+          <p className="text-3xl font-semibold text-[#1B2430]">—</p>
+          <p className="text-xs text-[#5B6675] mt-2">Automation mappings are not yet tracked.</p>
         </div>
         <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
           <p className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Manual only</p>
-          <p className="text-3xl font-semibold text-[#1B2430]">28 <span className="sample-badge">Sample data</span></p>
+          <p className="text-3xl font-semibold text-[#1B2430]">—</p>
+          <p className="text-xs text-[#5B6675] mt-2">Cases without an automation mapping.</p>
         </div>
         <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
           <p className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Scripts without case</p>
-          <p className="text-3xl font-semibold text-[#1B2430]">6 <span className="sample-badge">Sample data</span></p>
+          <p className="text-3xl font-semibold text-[#1B2430]">—</p>
+          <p className="text-xs text-[#5B6675] mt-2">Automation scripts not linked to a case.</p>
         </div>
       </div>
 
@@ -45,13 +41,8 @@ export default function AutomationPage() {
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
             <tr>
-              <td className="px-4 py-3 text-[#1B2430] font-medium">TC-001</td>
-              <td className="px-4 py-3 text-[#5B6675]">login_test.py</td>
-              <td className="px-4 py-3"><span className="badge status-pass">95% <span className="sample-badge" style={{ marginLeft: "6px" }}>Sample</span></span></td>
-              <td className="px-4 py-3 text-[#5B6675]">Approved mapping</td>
-              <td className="px-4 py-3 text-[#5B6675]">2h ago</td>
-              <td className="px-4 py-3 text-right">
-                <Link href="#" className="btn-link text-sm">Change</Link>
+              <td colSpan={6} className="px-4 py-3 text-[#5B6675] text-center">
+                No automation mappings yet.
               </td>
             </tr>
           </tbody>

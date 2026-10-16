@@ -1,7 +1,18 @@
+import { prisma } from "@/lib/prisma";
+import { createDefect } from "@/app/actions";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 
-export default function DefectsPage() {
+export default async function DefectsPage() {
+  const [defects, testCases, users] = await Promise.all([
+    prisma.defect.findMany({
+      include: { testCase: true, reporter: true, assignee: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.testCase.findMany(),
+    prisma.user.findMany(),
+  ]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -9,70 +20,78 @@ export default function DefectsPage() {
         title="Defects"
         description="Track and link defects to test cases and runs."
         actions={
-          <button className="btn-primary">Report defect</button>
+          <form action={createDefect} className="flex flex-col lg:flex-row lg:items-center gap-2">
+            <input name="title" placeholder="Defect title" className="input w-48" required />
+            <select name="severity" className="input">
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+            <select name="reporterId" className="input">
+              <option value="">Reporter</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+            <select name="testCaseId" className="input">
+              <option value="">Test case</option>
+              {testCases.map((tc) => (
+                <option key={tc.id} value={tc.id}>{tc.key}</option>
+              ))}
+            </select>
+            <button className="btn-primary">Report</button>
+          </form>
         }
       />
 
-      <div className="bg-white border border-[#C9D0D8] rounded overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#F5F7F9]">
-            <tr>
-              <th className="table-header">Title</th>
-              <th className="table-header">Severity</th>
-              <th className="table-header">Status</th>
-              <th className="table-header">Assignee</th>
-              <th className="table-header text-right">Links</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#C9D0D8]">
-            <tr className="hover:bg-[#EDF0F3]">
-              <td className="px-4 py-3"><Link href="/defects/D-004" className="text-[#1F6F8B] hover:underline font-medium">Login fails on Safari</Link></td>
-              <td className="px-4 py-3"><span className="badge status-fail">High</span></td>
-              <td className="px-4 py-3"><span className="badge status-neutral">Open</span></td>
-              <td className="px-4 py-3 text-[#5B6675]">Sam Chen</td>
-              <td className="px-4 py-3 text-right">
-                <Link href="/test-cases/TC-001" className="text-[#5B6675] hover:text-[#1F6F8B] text-sm">TC-001</Link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
-        <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Defect detail</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="space-y-1">
-            <p className="text-xs text-[#5B6675] uppercase tracking-wider">Expected result</p>
-            <p className="text-[#1B2430]">User is logged in and redirected to dashboard.</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs text-[#5B6675] uppercase tracking-wider">Actual result</p>
-            <p className="text-[#1B2430]">Error page displayed: "Invalid credentials" despite correct input.</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs text-[#5B6675] uppercase tracking-wider">Environment</p>
-            <p className="text-[#1B2430]">Safari 17, macOS Sonoma</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs text-[#5B6675] uppercase tracking-wider">Build</p>
-            <p className="text-[#1B2430]">v2.4.1</p>
-          </div>
+      {defects.length === 0 ? (
+        <div className="bg-white border border-[#C9D0D8] rounded p-[28px] text-center">
+          <p className="text-sm text-[#5B6675]">No defects yet. Report your first defect above.</p>
         </div>
-      </div>
-
-      <div className="bg-[#FAF8FD] border border-dashed border-[#6B4FA3] rounded p-[28px]">
-        <div className="flex items-start gap-3">
-          <span className="text-[#6B4FA3]">AI</span>
-          <div>
-            <p className="text-sm font-semibold text-[#1B2430] mb-1">AI root-cause hypothesis</p>
-            <p className="text-xs text-[#55398C]">Safari may be storing credentials in a different keychain, causing authentication to fail. Cites: TC-001 execution log.</p>
-          </div>
+      ) : (
+        <div className="bg-white border border-[#C9D0D8] rounded overflow-hidden">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-[#F5F7F9]">
+              <tr>
+                <th className="table-header px-4 py-3">Title</th>
+                <th className="table-header px-4 py-3">Severity</th>
+                <th className="table-header px-4 py-3">Status</th>
+                <th className="table-header px-4 py-3">Assignee</th>
+                <th className="table-header px-4 py-3 text-right">Links</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#C9D0D8]">
+              {defects.map((d) => (
+                <tr key={d.id} className="hover:bg-[#EDF0F3]">
+                  <td className="px-4 py-3">
+                    <Link href={`/defects/${d.id}`} className="text-[#1F6F8B] hover:underline font-medium">
+                      {d.title}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`badge ${d.severity === "HIGH" ? "status-fail" : d.severity === "MEDIUM" ? "status-blocked" : "status-neutral"}`}>
+                      {d.severity}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="badge status-neutral">{d.status}</span>
+                  </td>
+                  <td className="px-4 py-3 text-[#5B6675]">{d.reporter?.name || "—"}</td>
+                  <td className="px-4 py-3 text-right">
+                    {d.testCase ? (
+                      <Link href={`/test-cases/${d.testCaseId}`} className="text-[#5B6675] hover:text-[#1F6F8B] text-sm">
+                        {d.testCase.key}
+                      </Link>
+                    ) : (
+                      <span className="text-[#5B6675] text-sm">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      <button className="btn-outline w-full flex items-center justify-center gap-2">
-        Create GitHub issue
-      </button>
+      )}
     </div>
   );
 }
