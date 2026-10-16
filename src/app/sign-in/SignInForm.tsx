@@ -92,8 +92,8 @@ export default function SignInForm({ verified }: SignInFormProps) {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-[#F5F7F9] px-[28px]">
-      <div className="w-full max-w-2xl bg-white border border-[#C9D0D8] rounded-lg shadow-sm flex flex-col md:flex-row">
+    <div className="flex-1 bg-[#F5F7F9] px-[28px] py-6">
+      <div className="w-full max-w-2xl mx-auto bg-white border border-[#C9D0D8] rounded-lg shadow-sm flex flex-col md:flex-row">
         <form onSubmit={handleSubmit} className="w-full md:w-1/2 p-[28px] space-y-5">
           <h2 className="text-2xl font-semibold text-[#1B2430]">Sign in</h2>
           {verified && (
