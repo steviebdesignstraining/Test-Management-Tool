@@ -70,16 +70,33 @@ model OrganisationMember {
 /// A Project belongs to an organisation and contains test cases, plans, etc.
 model Project {
   id                     String                  @id @default(cuid())
+  key                    String?               @unique
   name                   String
   description            String?
+  objectives             String?
+  product                String?
   organisation           Organisation            @relation("Project_organisation", fields: [organisationId], references: [id])
   organisationId         String
+  businessOwnerId        String?
+  projectManagerId       String?
+  qaLeadId               String?
+  projectType            String?
+  methodology            String?
+  riskClassification     String?
+  requirementsSource     String?
+  defaultTemplates       String?
+  inScopeAreas           String?
+  outOfScopeAreas        String?
+  startDate              DateTime?
+  targetDate             DateTime?
+  status                 String                @default("DRAFT")
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   members                ProjectMember[]         @relation("projectMembers")
   roles                  ProjectRole[]           @relation("ProjectRole_project")
   invitations            ProjectInvitation[]     @relation("ProjectInvitation_project")
-    testCases              TestCase[]              @relation("TestCase_project")
+  strategies             TestStrategy[]         @relation("Strategy_project")
+  testCases              TestCase[]              @relation("TestCase_project")
   testPlans              TestPlan[]              @relation("TestPlan_project")
   requirements           Requirement[]           @relation("Requirement_project")
   apiCollections         ApiCollection[]         @relation("ApiCollection_project")
@@ -88,6 +105,40 @@ model Project {
   ciRuns                 CiRun[]                 @relation("CiRun_project")
   environments           Environment[]           @relation("Environment_project")
   qualityGates           QualityGate[]           @relation("QualityGate_project")
+}
+
+/// A Test Strategy defines the overall testing approach, standards, risks and quality objectives for a project.
+/// It is reusable and version-controlled across multiple test plans and releases.
+model TestStrategy {
+  id                         String   @id @default(cuid())
+  name                       String
+  project                    Project  @relation("Strategy_project", fields: [projectId], references: [id])
+  projectId                  String
+  version                    String   @default("1.0")
+  status                     String   @default("DRAFT")
+  purposeAndObjectives       String?
+  scopeAndExclusions         String?
+  testPrinciples             String?
+  riskBasedApproach          String?
+  testLevels                 String?
+  testTypes                  String?
+  testDesignTechniques       String?
+  testEnvironmentApproach    String?
+  testDataApproach           String?
+  automationStrategy         String?
+  manualTestingApproach      String?
+  nonFunctionalTesting       String?
+  aiTestingApproach          String?
+  defectManagement           String?
+  entryExitPrinciples        String?
+  qualityMetrics             String?
+  rolesAndResponsibilities   String?
+  standardsAndCompliance     String?
+  risksAssumptionsDependencies String?
+  approvalAndVersionHistory  String?
+  plans                      TestPlan[]         @relation("Strategy_plan")
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 }
 
 /// The ProjectMember model connects users to projects with a role.
@@ -264,8 +315,14 @@ model TestPlan {
   description String?
   project     Project     @relation("TestPlan_project", fields: [projectId], references: [id])
   projectId   String
+  strategyId  String?
+  strategy    TestStrategy? @relation("Strategy_plan", fields: [strategyId], references: [id])
+  strategyVersion String?
   scope       String?
   objectives  String?
+  entryCriteria String?
+  exitCriteria String?
+  status      String      @default("DRAFT")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   suites      TestSuite[] @relation("TestSuite_testPlan")

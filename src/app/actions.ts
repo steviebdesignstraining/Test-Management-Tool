@@ -2,13 +2,159 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { sanitizeInput, FIELD_LIMITS } from "@/lib/validation";
+import {
+  sanitizeInput,
+  FIELD_LIMITS,
+  validateProjectKey,
+  validateProjectType,
+  validateProjectStatus,
+} from "@/lib/validation";
 
 export async function createProject(formData: FormData) {
-  const name = formData.get("name") as string;
-  const org = await prisma.organisation.findFirst();
-  await prisma.project.create({ data: { name: sanitizeInput(name), description: "", organisationId: org?.id || "" } });
+  const name = sanitizeInput(String(formData.get("name") || ""));
+  const keyRaw = String(formData.get("key") || "");
+  const description = sanitizeInput(String(formData.get("description") || ""));
+  const objectives = sanitizeInput(String(formData.get("objectives") || ""));
+  const product = sanitizeInput(String(formData.get("product") || ""));
+  const projectType = String(formData.get("projectType") || "");
+  const methodology = sanitizeInput(String(formData.get("methodology") || ""));
+  const riskClassification = sanitizeInput(String(formData.get("riskClassification") || ""));
+  const requirementsSource = sanitizeInput(String(formData.get("requirementsSource") || ""));
+  const defaultTemplates = sanitizeInput(String(formData.get("defaultTemplates") || ""));
+  const inScopeAreas = sanitizeInput(String(formData.get("inScopeAreas") || ""));
+  const outOfScopeAreas = sanitizeInput(String(formData.get("outOfScopeAreas") || ""));
+  const startDate = formData.get("startDate") ? new Date(String(formData.get("startDate"))) : undefined;
+  const targetDate = formData.get("targetDate") ? new Date(String(formData.get("targetDate"))) : undefined;
+  const status = String(formData.get("status") || "DRAFT");
+  const businessOwnerId = String(formData.get("businessOwnerId") || "") || undefined;
+  const projectManagerId = String(formData.get("projectManagerId") || "") || undefined;
+  const qaLeadId = String(formData.get("qaLeadId") || "") || undefined;
+
+  if (!name || name.trim().length === 0) {
+    throw new Error("Project name is required");
+  }
+
+  const key = keyRaw.trim().toUpperCase() || name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6) || "PRJ";
+  const keyValidation = validateProjectKey(key);
+  if (!keyValidation.valid) {
+    throw new Error(keyValidation.error);
+  }
+  const existingKey = await prisma.project.findUnique({ where: { key } });
+  if (existingKey) {
+    throw new Error(`Project key "${key}" is already used. Try a different key.`);
+  }
+
+  const typeValidation = validateProjectType(projectType);
+  if (!typeValidation.valid) {
+    throw new Error(typeValidation.error);
+  }
+
+  const statusValidation = validateProjectStatus(status);
+  if (!statusValidation.valid) {
+    throw new Error(statusValidation.error);
+  }
+
+  let org = await prisma.organisation.findFirst();
+  if (!org) {
+    org = await prisma.organisation.create({ data: { name: "Default Workspace" } });
+  }
+
+  await prisma.project.create({
+    data: {
+      key,
+      name,
+      description: description || null,
+      objectives: objectives || null,
+      product: product || null,
+      projectType: projectType || null,
+      methodology: methodology || null,
+      riskClassification: riskClassification || null,
+      requirementsSource: requirementsSource || null,
+      defaultTemplates: defaultTemplates || null,
+      inScopeAreas: inScopeAreas || null,
+      outOfScopeAreas: outOfScopeAreas || null,
+      startDate,
+      targetDate,
+      status: status || "DRAFT",
+      organisationId: org.id,
+      businessOwnerId,
+      projectManagerId,
+      qaLeadId,
+    },
+  });
   revalidatePath("/projects");
+}
+
+export async function createStrategy(formData: FormData) {
+  const name = sanitizeInput(String(formData.get("name") || "")).slice(0, FIELD_LIMITS.title);
+  const projectId = String(formData.get("projectId") || "");
+  const version = String(formData.get("version") || "1.0");
+  const status = String(formData.get("status") || "DRAFT");
+  const purposeAndObjectives = sanitizeInput(String(formData.get("purposeAndObjectives") || ""));
+  const scopeAndExclusions = sanitizeInput(String(formData.get("scopeAndExclusions") || ""));
+  const testPrinciples = sanitizeInput(String(formData.get("testPrinciples") || ""));
+  const riskBasedApproach = sanitizeInput(String(formData.get("riskBasedApproach") || ""));
+  const testLevels = sanitizeInput(String(formData.get("testLevels") || ""));
+  const testTypes = sanitizeInput(String(formData.get("testTypes") || ""));
+  const testDesignTechniques = sanitizeInput(String(formData.get("testDesignTechniques") || ""));
+  const testEnvironmentApproach = sanitizeInput(String(formData.get("testEnvironmentApproach") || ""));
+  const testDataApproach = sanitizeInput(String(formData.get("testDataApproach") || ""));
+  const automationStrategy = sanitizeInput(String(formData.get("automationStrategy") || ""));
+  const manualTestingApproach = sanitizeInput(String(formData.get("manualTestingApproach") || ""));
+  const nonFunctionalTesting = sanitizeInput(String(formData.get("nonFunctionalTesting") || ""));
+  const aiTestingApproach = sanitizeInput(String(formData.get("aiTestingApproach") || ""));
+  const defectManagement = sanitizeInput(String(formData.get("defectManagement") || ""));
+  const entryExitPrinciples = sanitizeInput(String(formData.get("entryExitPrinciples") || ""));
+  const qualityMetrics = sanitizeInput(String(formData.get("qualityMetrics") || ""));
+  const rolesAndResponsibilities = sanitizeInput(String(formData.get("rolesAndResponsibilities") || ""));
+  const standardsAndCompliance = sanitizeInput(String(formData.get("standardsAndCompliance") || ""));
+  const risksAssumptionsDependencies = sanitizeInput(String(formData.get("risksAssumptionsDependencies") || ""));
+  const approvalAndVersionHistory = sanitizeInput(String(formData.get("approvalAndVersionHistory") || ""));
+
+  if (!name || name.trim().length === 0) {
+    throw new Error("Strategy name is required");
+  }
+  if (!projectId) {
+    throw new Error("Project is required");
+  }
+
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  await prisma.testStrategy.create({
+    data: {
+      name,
+      projectId,
+      version,
+      status,
+      purposeAndObjectives: purposeAndObjectives || null,
+      scopeAndExclusions: scopeAndExclusions || null,
+      testPrinciples: testPrinciples || null,
+      riskBasedApproach: riskBasedApproach || null,
+      testLevels: testLevels || null,
+      testTypes: testTypes || null,
+      testDesignTechniques: testDesignTechniques || null,
+      testEnvironmentApproach: testEnvironmentApproach || null,
+      testDataApproach: testDataApproach || null,
+      automationStrategy: automationStrategy || null,
+      manualTestingApproach: manualTestingApproach || null,
+      nonFunctionalTesting: nonFunctionalTesting || null,
+      aiTestingApproach: aiTestingApproach || null,
+      defectManagement: defectManagement || null,
+      entryExitPrinciples: entryExitPrinciples || null,
+      qualityMetrics: qualityMetrics || null,
+      rolesAndResponsibilities: rolesAndResponsibilities || null,
+      standardsAndCompliance: standardsAndCompliance || null,
+      risksAssumptionsDependencies: risksAssumptionsDependencies || null,
+      approvalAndVersionHistory: approvalAndVersionHistory || null,
+    },
+  });
+  revalidatePath("/strategies");
 }
 
 export async function createTestCase(formData: FormData) {
@@ -27,8 +173,9 @@ export async function createTestCase(formData: FormData) {
   const testEnvironment = formData.get("testEnvironment") as string || undefined;
   const priority = formData.get("priority") as string || "MEDIUM";
   const severity = formData.get("severity") as string || "MEDIUM";
-  const status = formData.get("status") as string || "NOT_RUN";
+  const status = formData.get("status") as string || "DRAFT";
   const automationStatus = formData.get("automationStatus") as string || "MANUAL";
+  const testSuiteId = String(formData.get("testSuiteId") || "") || undefined;
   const automationScriptLink = formData.get("automationScriptLink") as string || undefined;
   const component = formData.get("component") as string || undefined;
   const estimatedDuration = formData.get("estimatedDuration") as string || undefined;
@@ -97,6 +244,7 @@ export async function createTestCase(formData: FormData) {
       projectId,
       ownerId,
       reviewerId,
+      testSuiteId,
       testType,
       testLevel,
       testTechnique,
@@ -140,9 +288,58 @@ export async function createTestCase(formData: FormData) {
 }
 
 export async function createTestPlan(formData: FormData) {
-  const name = formData.get("name") as string;
-  const projectId = formData.get("projectId") as string;
-  await prisma.testPlan.create({ data: { name: sanitizeInput(name), description: "", projectId } });
+  const name = sanitizeInput(String(formData.get("name") || ""));
+  const projectId = String(formData.get("projectId") || "");
+  const strategyId = String(formData.get("strategyId") || "") || undefined;
+  const strategyVersion = String(formData.get("strategyVersion") || "") || undefined;
+  const scope = sanitizeInput(String(formData.get("scope") || ""));
+  const description = sanitizeInput(String(formData.get("description") || ""));
+  const entryCriteria = sanitizeInput(String(formData.get("entryCriteria") || ""));
+  const exitCriteria = sanitizeInput(String(formData.get("exitCriteria") || ""));
+  const status = String(formData.get("status") || "DRAFT");
+
+  if (!name || name.trim().length === 0) {
+    throw new Error("Plan name is required");
+  }
+  if (!projectId) {
+    throw new Error("Project is required");
+  }
+  if (!strategyId) {
+    throw new Error("Strategy is required");
+  }
+  if (!scope || scope.trim().length === 0) {
+    throw new Error("Scope is required");
+  }
+  if (!entryCriteria || entryCriteria.trim().length === 0) {
+    throw new Error("Entry criteria are required");
+  }
+  if (!exitCriteria || exitCriteria.trim().length === 0) {
+    throw new Error("Exit criteria are required");
+  }
+
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  const strategy = await prisma.testStrategy.findUnique({ where: { id: strategyId } });
+  if (!strategy) {
+    throw new Error("Strategy not found");
+  }
+
+  await prisma.testPlan.create({
+    data: {
+      name,
+      description: description || null,
+      projectId,
+      strategyId,
+      strategyVersion,
+      scope,
+      entryCriteria,
+      exitCriteria,
+      status,
+    },
+  });
   revalidatePath("/test-plans");
 }
 

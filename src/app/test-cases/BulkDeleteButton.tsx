@@ -1,12 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
+import { bulkDeleteTestCases } from "@/app/actions";
 
-interface BulkDeleteButtonProps {
-  action: (formData: FormData) => Promise<void>;
-}
-
-export default function BulkDeleteButton({ action }: BulkDeleteButtonProps) {
+export default function BulkDeleteButton() {
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
@@ -27,7 +24,7 @@ export default function BulkDeleteButton({ action }: BulkDeleteButtonProps) {
     const formData = new FormData();
     selected.forEach((id) => formData.append("ids", id));
     startTransition(async () => {
-      await action(formData);
+      await bulkDeleteTestCases(formData);
     });
   }
 

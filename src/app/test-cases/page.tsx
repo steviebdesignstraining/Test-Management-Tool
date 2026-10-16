@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createTestCase, deleteTestCase, bulkDeleteTestCases } from "@/app/actions";
+import { createTestCase, deleteTestCase } from "@/app/actions";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import BulkDeleteButton from "./BulkDeleteButton";
@@ -156,19 +156,33 @@ export default async function TestCasesPage() {
                     The ID will be auto-generated (e.g. TC-LOGIN-001).
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">
-                    Project <span className="text-[#8F2A20]">*</span>
-                  </label>
-                  <select name="projectId" className="input" required>
-                    <option value="">Select project</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">
+                  Project <span className="text-[#8F2A20]">*</span>
+                </label>
+                <select name="projectId" className="input" required>
+                  <option value="">Select project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">
+                  Test suite
+                </label>
+                <select name="testSuiteId" className="input">
+                  <option value="">No suite</option>
+                  {testSuites.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               </div>
 
               <div className="space-y-2">
@@ -500,7 +514,7 @@ export default async function TestCasesPage() {
             </div>
           ) : (
             <div>
-              <BulkDeleteButton action={bulkDeleteTestCases} />
+              <BulkDeleteButton />
 
               <div className="bg-white border border-[#C9D0D8] rounded overflow-hidden">
                 <table className="w-full text-left text-sm">

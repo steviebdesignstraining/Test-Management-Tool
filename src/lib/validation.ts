@@ -178,3 +178,49 @@ export const FIELD_LIMITS = {
   comment: 2000,
   search: 200,
 } as const;
+
+export const PROJECT_TYPES = [
+  "WEB",
+  "MOBILE",
+  "API",
+  "DATA",
+  "PLATFORM",
+  "AI",
+  "OTHER",
+] as const;
+export type ProjectType = (typeof PROJECT_TYPES)[number];
+
+export const PROJECT_STATUSES = ["DRAFT", "ACTIVE", "ON_HOLD", "ARCHIVED"] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export function validateProjectKey(value?: string): ValidationResult {
+  if (!value || value.trim().length === 0) {
+    return { valid: false, error: "Project key is required" };
+  }
+  const key = value.trim().toUpperCase();
+  if (!/^[A-Z0-9][A-Z0-9-]*$/.test(key)) {
+    return { valid: false, error: "Key must start with a letter or number and contain only uppercase letters, numbers and hyphens" };
+  }
+  if (key.length > FIELD_LIMITS.key) {
+    return { valid: false, error: `Maximum ${FIELD_LIMITS.key} characters allowed` };
+  }
+  return { valid: true };
+}
+
+export function validateProjectType(value?: string): ValidationResult {
+  if (!value) return { valid: true };
+  const upper = value.toUpperCase();
+  if (!PROJECT_TYPES.includes(upper as ProjectType)) {
+    return { valid: false, error: `Project type must be one of: ${PROJECT_TYPES.join(", ")}` };
+  }
+  return { valid: true };
+}
+
+export function validateProjectStatus(value?: string): ValidationResult {
+  if (!value) return { valid: true };
+  const upper = value.toUpperCase();
+  if (!PROJECT_STATUSES.includes(upper as ProjectStatus)) {
+    return { valid: false, error: `Status must be one of: ${PROJECT_STATUSES.join(", ")}` };
+  }
+  return { valid: true };
+}

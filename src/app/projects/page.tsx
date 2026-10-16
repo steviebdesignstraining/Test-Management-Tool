@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { createProject } from "@/app/actions";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import ProjectCreateModal from "@/components/ProjectCreateModal";
+
 
 export default async function ProjectsPage() {
   const projects = await prisma.project.findMany({
@@ -18,17 +19,7 @@ export default async function ProjectsPage() {
         breadcrumb="Projects"
         title="Projects"
         description="Manage your test projects and teams."
-        actions={
-          <form action={createProject} className="flex items-center gap-2">
-            <input
-              name="name"
-              placeholder="Project name"
-              className="input w-48"
-              required
-            />
-            <button className="btn-primary px-3">Create</button>
-          </form>
-        }
+        actions={<ProjectCreateModal />}
       />
 
       {projects.length === 0 ? (
