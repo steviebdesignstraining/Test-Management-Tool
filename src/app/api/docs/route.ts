@@ -1,6 +1,26 @@
 import { openApiSpec } from "./spec";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-export async function GET() {
+const OPENAPI_JSON_PATH = join(process.cwd(), "src/app/api/docs/openapi.json");
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const format = searchParams.get("format");
+
+  if (format === "json") {
+    try {
+      const spec = JSON.parse(readFileSync(OPENAPI_JSON_PATH, "utf-8"));
+      return new Response(JSON.stringify(spec, null, 2), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      return new Response(JSON.stringify(openApiSpec), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   const html = `
 <!DOCTYPE html>
 <html lang="en">

@@ -21,6 +21,9 @@ export async function POST(
   try {
     const { testCaseId } = await params;
     const { action, expectedResult, data, position } = await req.json();
+    if (!action || !expectedResult || position === undefined) {
+      return error("Action, expectedResult and position are required", 400);
+    }
     const step = await prisma.testStep.create({
       data: { testCaseId, action, expectedResult, data, position },
     });

@@ -950,4 +950,4 @@ Please ensure that all analytics, counters, values are dynamic and all logic wor
 
 Please ensure that where CRUD is used in the app works and functions according to crud and sdlc guidelines
 
-Once done test all features created and fix accordingly so that its fully functional, please ensure that API endpoints and the database reflects all new feature creations and updates.
+Once done update e2e tests with all new created features and test all features with positive, negative and edgecase scenarios created and fix, update and create accordingly so that its fully functional, please ensure that API endpoints and the database reflects all new feature creations and updates.

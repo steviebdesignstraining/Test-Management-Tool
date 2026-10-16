@@ -64,6 +64,29 @@ test.describe("Core user journey (implemented workflows)", () => {
     await expect(page.locator("span:has-text('TC-E2E-P1')")).toBeVisible();
   });
 
+  test("CASE-P02 create a test case with test type", async ({ page }: { page: Page }) => {
+    await page.goto("/test-cases");
+    await page.fill('input[name="key"]', "TC-E2E-P2");
+    await page.fill('input[name="title"]', "API type test");
+    await page.selectOption('select[name="projectId"]', { label: PROJECT });
+    await page.selectOption('select[name="ownerId"]', { label: OWNER });
+    await page.selectOption('select[name="testType"]', "API");
+    await page.click('button:has-text("Create")');
+    await expect(page.locator("span:has-text('TC-E2E-P2')")).toBeVisible();
+
+    await page.locator('a:has-text("API type test")').first().click();
+    await expect(page.locator("h1")).toContainText("TC-E2E-P2");
+    await expect(page.locator(".badge.status-accent")).toContainText("API");
+  });
+
+  test("CASE-P03 view test case detail shows test type badge", async ({ page }: { page: Page }) => {
+    await page.goto("/test-cases");
+    await expect(page.locator("span:has-text('TC-E2E-P1')")).toBeVisible();
+
+    await page.locator('a:has-text("Alpha test")').first().click();
+    await expect(page.locator("h1")).toContainText("TC-E2E-P1");
+  });
+
   test("CASE-N02 duplicate case key is handled without server error", async ({ page }: { page: Page }) => {
     await page.goto("/test-cases");
     await page.fill('input[name="key"]', "TC-E2E-N2");
@@ -117,6 +140,35 @@ test.describe("Core user journey (implemented workflows)", () => {
 
     await page.locator("text=Smoke test defect").first().click();
     await expect(page.locator("h1")).toContainText("Smoke test defect");
+  });
+
+  test("DEF-P03 create a defect with external ticket link", async ({ page }: { page: Page }) => {
+    const res = await page.request.post("/api/v1/defects", {
+      data: {
+        title: "External ticket defect E2E",
+        reporterId: (await page.request.get("/api/v1/me").then((r) => r.json())).user.id,
+        severity: "MEDIUM",
+        externalTicketId: "JIRA-E2E-1",
+        externalTicketUrl: "https://example.atlassian.net/browse/JIRA-E2E-1",
+      },
+    });
+    expect(res.ok()).toBe(true);
+    const defect = await res.json();
+    expect(defect.externalTicketId).toBe("JIRA-E2E-1");
+
+    await page.goto("/defects");
+    await expect(page.locator("text=External ticket defect E2E").first()).toBeVisible();
+  });
+
+  test("AI-01 navigate to AI assistant page", async ({ page }: { page: Page }) => {
+    await page.goto("/ai-assistant");
+    await expect(page.locator("h1")).toContainText("AI Test Case Generator");
+  });
+
+  test("AI-02 navigate to analytics page shows metrics", async ({ page }: { page: Page }) => {
+    await page.goto("/analytics");
+    await expect(page.locator("h1")).toContainText("Analytics");
+    await expect(page.locator("text=Test Cases")).toBeVisible();
   });
 
   test("AUTH-P04 sign out invalidates session", async ({ page }: { page: Page }) => {

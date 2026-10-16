@@ -40,6 +40,9 @@ export async function POST(req: Request) {
     if (!uploadedById) {
       return error("uploadedById is required", 400);
     }
+    if (file.size > 10 * 1024 * 1024) {
+      return error("File size exceeds 10MB limit", 413);
+    }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);

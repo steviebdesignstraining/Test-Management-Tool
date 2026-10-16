@@ -1,0 +1,593 @@
+openapi: "3.0.3"
+info:
+  title: TestHub API
+  version: "1.0.0"
+  description: >
+    REST API for the Test Management Tool platform.
+    Covers authentication, projects, test cases, test plans, executions, defects,
+    automation, AI recommendations, integrations, analytics, and audit logs.
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: Auth
+    description: Authentication and identity management
+  - name: Projects
+    description: Project CRUD operations
+  - name: TestCases
+    description: Manual test case management
+  - name: TestPlans
+    description: Test plans, suites, and assignments
+  - name: Executions
+    description: Test execution and step results
+  - name: Defects
+    description: Defect lifecycle management
+  - name: Automation
+    description: Automation repositories, CI/CD, and result ingestion
+  - name: AI
+    description: AI assistant, recommendations, and test-case generation
+  - name: Integrations
+    description: Third-party connections (Jira, Azure DevOps, Trello, GitHub)
+  - name: Analytics
+    description: Quality metrics, coverage, trends, and flaky tests
+  - name: Attachments
+    description: File uploads and downloads
+  - name: Audit
+    description: Audit log entries
+  - name: Settings
+    description: User settings and preferences
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                name: { type: string }
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+                  sessionToken: { type: string }
+        "400":
+          description: Missing email or password
+        "409":
+          description: Email already registered
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                keepSignedIn: { type: boolean }
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Missing credentials
+        "401":
+          description: Invalid credentials
+        "429":
+          description: Rate limited
+        "403":
+          description: Email not verified
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out and invalidate session
+      responses:
+        "200":
+          description: Logout successful
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: If the email exists, a reset link is sent
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using a token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Password reset
+        "400":
+          description: Invalid or expired token
+
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects with pagination
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated list of projects
+    post:
+      tags: [Projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, organisationId]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                organisationId: { type: string }
+      responses:
+        "201":
+          description: Project created
+        "400":
+          description: Name is required
+
+  /test-cases:
+    get:
+      tags: [TestCases]
+      summary: List test cases with pagination
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated list of test cases
+    post:
+      tags: [TestCases]
+      summary: Create a test case
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, title, projectId, ownerId]
+              properties:
+                key: { type: string }
+                title: { type: string }
+                description: { type: string }
+                objective: { type: string }
+                preconditions: { type: string }
+                priority: { type: string, example: "MEDIUM" }
+                severity: { type: string, example: "MEDIUM" }
+                component: { type: string }
+                labels: { type: array, items: { type: string } }
+                testType: { type: string, example: "FUNCTIONAL" }
+                gherkinText: { type: string }
+                projectId: { type: string }
+                ownerId: { type: string }
+                status: { type: string, example: "DRAFT" }
+                estimatedDuration: { type: integer }
+      responses:
+        "201":
+          description: Test case created
+        "400":
+          description: Missing required fields
+
+  /test-cases/{testCaseId}:
+    get:
+      tags: [TestCases]
+      summary: Get a single test case
+      parameters:
+        - in: path
+          name: testCaseId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Test case details
+        "404":
+          description: Not found
+    patch:
+      tags: [TestCases]
+      summary: Update a test case
+      parameters:
+        - in: path
+          name: testCaseId
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated test case
+    delete:
+      tags: [TestCases]
+      summary: Delete a test case
+      parameters:
+        - in: path
+          name: testCaseId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+
+  /test-cases/{testCaseId}/steps:
+    get:
+      tags: [TestCases]
+      summary: List test steps
+      parameters:
+        - in: path
+          name: testCaseId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of steps
+    post:
+      tags: [TestCases]
+      summary: Create a test step
+      parameters:
+        - in: path
+          name: testCaseId
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, expectedResult, position]
+              properties:
+                action: { type: string }
+                expectedResult: { type: string }
+                data: { type: string }
+                position: { type: integer }
+      responses:
+        "201":
+          description: Step created
+        "400":
+          description: Missing required fields
+
+  /test-executions:
+    get:
+      tags: [Executions]
+      summary: List test executions
+      parameters:
+        - in: query
+          name: testCaseId
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of executions
+    post:
+      tags: [Executions]
+      summary: Create a test execution
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [testCaseId, testerId]
+              properties:
+                testCaseId: { type: string }
+                testerId: { type: string }
+                status: { type: string }
+                actualResult: { type: string }
+                environment: { type: string }
+                build: { type: string }
+      responses:
+        "201":
+          description: Execution created
+        "400":
+          description: Missing required fields
+
+  /defects:
+    get:
+      tags: [Defects]
+      summary: List defects
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated list of defects
+    post:
+      tags: [Defects]
+      summary: Create a defect
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, reporterId]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                severity: { type: string }
+                priority: { type: string }
+                status: { type: string }
+                testCaseId: { type: string }
+                reporterId: { type: string }
+                externalTicketId: { type: string }
+                externalTicketUrl: { type: string }
+      responses:
+        "201":
+          description: Defect created
+        "400":
+          description: Missing required fields
+
+  /defects/{defectId}:
+    get:
+      tags: [Defects]
+      summary: Get a defect
+      parameters:
+        - in: path
+          name: defectId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Defect details
+        "404":
+          description: Not found
+    patch:
+      tags: [Defects]
+      summary: Update a defect
+      parameters:
+        - in: path
+          name: defectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated defect
+
+  /attachments:
+    get:
+      tags: [Attachments]
+      summary: List attachments
+      responses:
+        "200":
+          description: List of attachments
+    post:
+      tags: [Attachments]
+      summary: Upload a file attachment
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+                testCaseId: { type: string }
+                uploadedById: { type: string }
+      responses:
+        "201":
+          description: Attachment uploaded
+        "400":
+          description: File or uploader missing
+        "413":
+          description: File too large (max 10MB)
+
+  /analytics/overview:
+    get:
+      tags: [Analytics]
+      summary: Get overview metrics
+      responses:
+        "200":
+          description: Analytics overview
+
+  /analytics/coverage:
+    get:
+      tags: [Analytics]
+      summary: Get coverage metrics
+      responses:
+        "200":
+          description: Coverage data
+
+  /analytics/trends:
+    get:
+      tags: [Analytics]
+      summary: Get execution trends
+      responses:
+        "200":
+          description: Trend data
+
+  /analytics/flaky-tests:
+    get:
+      tags: [Analytics]
+      summary: Get flaky test list
+      responses:
+        "200":
+          description: Flaky tests
+
+  /ai/chat:
+    post:
+      tags: [AI]
+      summary: Chat with the AI quality assistant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string }
+                conversationHistory:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role: { type: string }
+                      content: { type: string }
+      responses:
+        "200":
+          description: AI response
+        "400":
+          description: Message is required
+
+  /ai/test-case-drafts:
+    post:
+      tags: [AI]
+      summary: Generate test case draft from feature description
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                projectId: { type: string }
+                feature: { type: string }
+                acceptanceCriteria: { type: string }
+      responses:
+        "201":
+          description: Draft generated
+
+  /ai/recommendations:
+    get:
+      tags: [AI]
+      summary: List AI recommendations
+      responses:
+        "200":
+          description: List of recommendations
+    post:
+      tags: [AI]
+      summary: Create an AI recommendation
+      responses:
+        "201":
+          description: Recommendation created
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string, nullable: true }
+        role: { type: string }
+        createdAt: { type: string, format: date-time }
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        organisationId: { type: string }
+        createdAt: { type: string, format: date-time }
+    TestCase:
+      type: object
+      properties:
+        id: { type: string }
+        key: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        objective: { type: string, nullable: true }
+        preconditions: { type: string, nullable: true }
+        priority: { type: string }
+        severity: { type: string }
+        testType: { type: string, nullable: true }
+        gherkinText: { type: string, nullable: true }
+        component: { type: string, nullable: true }
+        labels: { type: array, items: { type: string } }
+        projectId: { type: string }
+        ownerId: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Defect:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        severity: { type: string }
+        priority: { type: string }
+        status: { type: string }
+        reporterId: { type: string }
+        assigneeId: { type: string, nullable: true }
+        testCaseId: { type: string, nullable: true }
+        externalTicketId: { type: string, nullable: true }
+        externalTicketUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }

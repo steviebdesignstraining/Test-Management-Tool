@@ -26,7 +26,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { testCaseId, testerId, status, environment, build } = await req.json();
-    if (!testCaseId || !testerId) return error("testCaseId and testerId required", 400);
+    if (!testCaseId || !testerId) {
+      return error("testCaseId and testerId are required", 400);
+    }
+    if (status && !["PASSED", "FAILED", "BLOCKED", "SKIPPED", "NOT_RUN"].includes(status)) {
+      return error("Invalid status value", 400);
+    }
 
     const execution = await prisma.testExecution.create({
       data: { testCaseId, testerId, status, environment, build },
