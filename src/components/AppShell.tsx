@@ -5,7 +5,17 @@ import { usePathname } from "next/navigation";
 import TopBar from "@/components/TopBar";
 import Sidebar from "@/components/Sidebar";
 
-const PUBLIC_PATHS = ["/", "/sign-in", "/register", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = [
+  "/",
+  "/sign-in",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/features",
+  "/integrations",
+  "/security",
+  "/docs",
+];
 
 export default function AppShell({
   children,

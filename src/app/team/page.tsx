@@ -1,7 +1,14 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth-utils";
+import InviteForm from "@/components/invite-form";
+
+const ROLE_OPTIONS = [
+  { value: "OWNER", label: "Owner" },
+  { value: "MANAGER", label: "Manager" },
+  { value: "TESTER", label: "Tester" },
+  { value: "VIEWER", label: "Viewer" },
+];
 
 export default async function TeamPage() {
   const currentUser = await getCurrentUser();
@@ -31,7 +38,7 @@ export default async function TeamPage() {
       <PageHeader
         breadcrumb="Team and Access"
         title="Team and Access"
-        description="Manage members, roles and permissions."
+        description="Manage members, invite new collaborators, and configure role permissions."
         actions={
           <div className="flex items-end gap-4">
             <button className="btn-primary" disabled={!isOrgAdmin}>
@@ -43,6 +50,19 @@ export default async function TeamPage() {
           </div>
         }
       />
+
+      <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
+        <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Invite to a project</h3>
+        {projects.length === 0 ? (
+          <p className="text-sm text-[#5B6675]">No projects available. Create a project first.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="md:col-span-3">
+              <InviteForm projectId={projects[0].id} />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="bg-white border border-[#C9D0D8] rounded overflow-hidden">
         <table className="w-full text-left text-sm">
@@ -82,9 +102,9 @@ export default async function TeamPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href="#" className="btn-link text-sm">
+                      <a href="#" className="btn-link text-sm">
                         Edit
-                      </Link>
+                      </a>
                     </td>
                   </tr>
                 );
@@ -112,9 +132,9 @@ export default async function TeamPage() {
               {projects.map((project) => (
                 <tr key={project.id} className="hover:bg-[#EDF0F3]">
                   <td className="px-4 py-3 text-[#1B2430] font-medium">
-                    <Link href={`/projects/${project.id}`} className="text-[#1F6F8B] hover:underline">
+                    <a href={`/projects/${project.id}`} className="text-[#1F6F8B] hover:underline">
                       {project.name}
-                    </Link>
+                    </a>
                   </td>
                   <td className="px-4 py-3 text-[#5B6675]">{project.organisation.name}</td>
                   <td className="px-4 py-3 text-[#5B6675]">{project._count.testCases}</td>

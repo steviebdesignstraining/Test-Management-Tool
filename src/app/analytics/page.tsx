@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend, ReferenceLine,
+} from "recharts";
+
+const TYPE_COLORS = ["#1F6F8B", "#0A8043", "#8F2A20", "#F59E0B", "#6B46C1", "#D94E48", "#0EA5E9", "#6366F1"];
+const LIFECYCLE_COLORS: Record<string, string> = {
+  OPEN: "#D94E48",
+  IN_PROGRESS: "#F59E0B",
+  RESOLVED: "#0A8043",
+  CLOSED: "#1F6F8B",
+};
 
 interface TestCase {
   id: string;
@@ -175,9 +187,7 @@ export default function AnalyticsPage() {
   }
 
   const types = typeDistribution();
-  const maxTypeCount = Math.max(...types.map((t) => t.count), 1);
   const lifecycle = defectLifecycle();
-  const maxLifecycleCount = Math.max(...lifecycle.map((l) => l.count), 1);
   const trend = executionTrend();
   const maxTrendCount = Math.max(...trend.map((t) => t.passed + t.failed), 1);
 
@@ -242,6 +252,37 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* Pass/Fail Pie Chart */}
+      {totalExec > 0 && (
+        <div className="card fade-in">
+          <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Test results distribution</h3>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+                <Pie
+                data={[
+                  { name: "Passed", value: passedCount },
+                  { name: "Failed", value: failedCount },
+                  { name: "Other", value: totalExec - passedCount - failedCount },
+                ]}
+                dataKey="value"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? "N/A"} (${percent ? (percent * 100).toFixed(0) : 0}%)`}
+              >
+                <Cell fill="#0A8043" />
+                <Cell fill="#D94E48" />
+                <Cell fill="#9CA3AF" />
+              </Pie>
+              <Tooltip
+                contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
+                formatter={(value: any) => [value, "Tests"] as [any, string]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* Analytics Grids */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Test Type Distribution */}
@@ -250,20 +291,22 @@ export default function AnalyticsPage() {
           {types.length === 0 ? (
             <p className="text-sm text-[#5B6675]">No test cases found. Add projects to get started.</p>
           ) : (
-            <div className="space-y-3">
-              {types.map((t) => (
-                <div key={t.type} className="flex items-center gap-3">
-                  <span className="w-24 text-xs text-[#5B6675]">{t.label}</span>
-                  <div className="flex-1 progress-bar">
-                    <div
-                      className="progress-bar-fill bg-[#1F6F8B]"
-                      style={{ width: `${(t.count / maxTypeCount) * 100}%` }}
-                    />
-                  </div>
-                  <span className="w-8 text-xs text-[#5B6675] text-right">{t.count}</span>
-                </div>
-              ))}
-            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={types} margin={{ top: 4, right: 24, left: 0, bottom: 24 }}>
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#5B6675", angle: -30, textAnchor: "end" }} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
+                  formatter={(value: any) => [value, "Cases"] as [any, string]}
+                  labelStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {types.map((_, i) => (
+                    <Cell key={`cell-${i}`} fill={TYPE_COLORS[i % TYPE_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -303,23 +346,21 @@ export default function AnalyticsPage() {
           {trend.length === 0 ? (
             <p className="text-sm text-[#5B6675]">No execution history available.</p>
           ) : (
-            <div className="space-y-3">
-              {trend.slice(-10).map((t) => {
-                const total = t.passed + t.failed;
-                return (
-                  <div key={t.date} className="flex items-center gap-3">
-                    <span className="w-20 text-xs text-[#5B6675]">{t.date}</span>
-                    <div className="flex-1 progress-bar">
-                      <div
-                        className="progress-bar-fill bg-[#0A8043]"
-                        style={{ width: `${(t.passed / maxTrendCount) * 100}%` }}
-                      />
-                    </div>
-                    <span className="w-8 text-xs text-[#5B6675] text-right">{total}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={trend.slice(-10)} margin={{ top: 4, right: 24, left: 0, bottom: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EDF0F3" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#5B6675" }} />
+                <YAxis hide domain={[0, maxTrendCount]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
+                  formatter={(value: any) => [value, "Tests"] as [any, string]}
+                  labelStyle={{ fontSize: 12 }}
+                />
+                <Legend verticalAlign="top" height={30} iconSize={10} />
+                <Line type="monotone" dataKey="passed" stroke="#0A8043" name="Passed" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} isAnimationActive={true} />
+                <Line type="monotone" dataKey="failed" stroke="#D94E48" name="Failed" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} isAnimationActive={true} />
+              </LineChart>
+            </ResponsiveContainer>
           )}
           <p className="text-xs text-[#5B6675] mt-3">
             Last 10 days. Pass: {passedCount} | Fail: {failedCount}
@@ -328,20 +369,26 @@ export default function AnalyticsPage() {
 
         <div className="card fade-in">
           <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Defect lifecycle</h3>
-          <div className="space-y-3">
-            {lifecycle.map((l) => (
-              <div key={l.status} className="flex items-center gap-3">
-                <span className="w-24 text-xs text-[#5B6675] capitalize">{l.status.toLowerCase().replace("_", " ")}</span>
-                <div className="flex-1 progress-bar">
-                  <div
-                    className="progress-bar-fill bg-[#1F6F8B]"
-                    style={{ width: `${(l.count / maxLifecycleCount) * 100}%` }}
-                  />
-                </div>
-                <span className="w-8 text-xs text-[#5B6675] text-right">{l.count}</span>
-              </div>
-            ))}
-          </div>
+          {lifecycle.every((l) => l.count === 0) ? (
+            <p className="text-sm text-[#5B6675]">No defects in any lifecycle stage.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={lifecycle} margin={{ top: 4, right: 24, left: 0, bottom: 24 }}>
+                <XAxis dataKey="status" tick={{ fontSize: 11, fill: "#5B6675" }} tickFormatter={(v: string) => v.replace("_", " ").toLowerCase()} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
+                  formatter={(value: any) => [value, "Defects"] as [any, string]}
+                  labelStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {lifecycle.map((l) => (
+                    <Cell key={l.status} fill={LIFECYCLE_COLORS[l.status] ?? "#6B7280"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
           <p className="text-xs text-[#5B6675] mt-3">Total defects: {defects.length}</p>
         </div>
       </div>

@@ -26,7 +26,19 @@ export default function HomePage() {
             <span className="font-bold text-lg tracking-tight text-[#1F6F8B]">TestHub</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/sign-in" className="text-sm font-medium text-[#5B6675] hover:text-[#1B2430]">
+            <Link href="/features" className="text-sm font-medium text-[#5B6675] hover:text-[#1B2430]">
+              Features
+            </Link>
+            <Link href="/integrations" className="text-sm font-medium text-[#5B6675] hover:text-[#1B2430]">
+              Integrations
+            </Link>
+            <Link href="/security" className="text-sm font-medium text-[#5B6675] hover:text-[#1B2430]">
+              Security
+            </Link>
+            <Link href="/docs" className="text-sm font-medium text-[#5B6675] hover:text-[#1B2430]">
+              Docs
+            </Link>
+            <Link href="/sign-in" className="text-sm font-medium text-[#5B6675] hover:text-[#1B2430] border border-[#C9D0D8] rounded px-3 py-1.5">
               Sign in
             </Link>
             <Link href="/register" className="btn-primary text-sm px-4 py-1.5">
