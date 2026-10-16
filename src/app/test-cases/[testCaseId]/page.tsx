@@ -20,10 +20,12 @@ export default async function TestCaseDetailPage({
       executions: { include: { tester: true }, orderBy: { createdAt: "desc" } },
       project: true,
       owner: true,
+      reviewer: true,
       defects: true,
       versions: { orderBy: { version: "desc" }, include: { changedBy: { select: { name: true } } } },
       attachments: { include: { uploadedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
       parameters: { orderBy: { position: "asc" } },
+      requirementLinks: { include: { requirement: true } },
     },
   });
 
@@ -31,31 +33,60 @@ export default async function TestCaseDetailPage({
     return <div className="p-[28px]">Test case not found.</div>;
   }
 
+  const statusBadge = (status: string) => {
+    switch (status) {
+      case "PASSED": return "status-pass";
+      case "FAILED": return "status-fail";
+      case "BLOCKED": return "status-warn";
+      case "SKIPPED": return "status-neutral";
+      default: return "status-neutral";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         breadcrumb="Test Cases"
         title={testCase.key + " — " + testCase.title}
-        description="Test case detail with steps and executions."
+        description="Test case detail with steps, executions, and full traceability."
         actions={
           <div className="flex items-center gap-2">
             <form action={async (formData: FormData) => {
               "use server";
               const id = formData.get("id") as string;
-              const testCase = await prisma.testCase.findUnique({ where: { id } });
-              if (!testCase) return;
+              const existing = await prisma.testCase.findUnique({ where: { id }, include: { steps: { orderBy: { position: "asc" } } } });
+              if (!existing) return;
               await prisma.testCase.create({
                 data: {
-                  key: testCase.key + "-COPY",
-                  title: testCase.title + " (Copy)",
-                  description: testCase.description,
-                  objective: testCase.objective,
-                  preconditions: testCase.preconditions,
-                  priority: testCase.priority,
+                  key: existing.key + "-COPY",
+                  title: existing.title + " (Copy)",
+                  description: existing.description,
+                  objective: existing.objective,
+                  preconditions: existing.preconditions,
+                  testData: existing.testData,
+                  priority: existing.priority,
+                  severity: existing.severity,
                   status: "DRAFT",
-                  component: testCase.component,
-                  projectId: testCase.projectId,
-                  ownerId: testCase.ownerId,
+                  testType: existing.testType,
+                  testLevel: existing.testLevel,
+                  testTechnique: existing.testTechnique,
+                  testEnvironment: existing.testEnvironment,
+                  automationStatus: existing.automationStatus,
+                  automationScriptLink: existing.automationScriptLink,
+                  component: existing.component,
+                  labels: existing.labels,
+                  projectId: existing.projectId,
+                  ownerId: existing.ownerId,
+                  reviewerId: existing.reviewerId,
+                  estimatedDuration: existing.estimatedDuration,
+                  steps: {
+                    create: existing.steps.map((s, i) => ({
+                      action: s.action,
+                      expectedResult: s.expectedResult,
+                      data: s.data || null,
+                      position: i + 1,
+                    })),
+                  },
                 },
               });
             }}
@@ -77,13 +108,25 @@ export default async function TestCaseDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
-            <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Objective</h2>
+            <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Objective / Description</h2>
             <p className="text-sm text-[#5B6675]">{testCase.objective || "No objective defined."}</p>
           </div>
 
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Preconditions</h2>
             <p className="text-sm text-[#5B6675]">{testCase.preconditions || "None"}</p>
+          </div>
+
+          {testCase.testData && (
+            <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
+              <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Test Data</h2>
+              <p className="text-sm text-[#5B6675]">{testCase.testData}</p>
+            </div>
+          )}
+
+          <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
+            <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Expected Results</h2>
+            <p className="text-sm text-[#5B6675]">{testCase.description || "No expected results defined."}</p>
           </div>
 
           {testCase.gherkinText && (
@@ -95,23 +138,30 @@ export default async function TestCaseDetailPage({
             </div>
           )}
 
+          {testCase.actualResult && (
+            <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
+              <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Actual Result</h2>
+              <p className="text-sm text-[#5B6675]">{testCase.actualResult}</p>
+            </div>
+          )}
+
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
-            <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Test steps</h2>
+            <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Test Steps</h2>
             <form action={addTestStep} className="space-y-3 mb-4">
               <input type="hidden" name="testCaseId" value={testCaseId} />
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">#</label>
-              <input name="position" type="number" defaultValue={String(testCase.steps.length + 1)} className="input w-20" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Action</label>
-              <input name="action" placeholder="Step action" maxLength={FIELD_LIMITS.description} className="input" required />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Expected result</label>
-              <input name="expectedResult" placeholder="Expected result" maxLength={FIELD_LIMITS.description} className="input" required />
-            </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">#</label>
+                  <input name="position" type="number" defaultValue={String(testCase.steps.length + 1)} className="input w-20" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Action</label>
+                  <input name="action" placeholder="Step action" maxLength={FIELD_LIMITS.description} className="input" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Expected result</label>
+                  <input name="expectedResult" placeholder="Expected result" maxLength={FIELD_LIMITS.description} className="input" required />
+                </div>
                 <button className="btn-primary w-full text-xs px-3 py-1.5">Add step</button>
               </div>
             </form>
@@ -119,11 +169,11 @@ export default async function TestCaseDetailPage({
             <table className="w-full text-left text-sm">
               <thead className="bg-[#F5F7F9]">
                 <tr>
-                    <th className="table-header px-4 py-3 w-10">#</th>
-                    <th className="table-header px-4 py-3">Action</th>
-                    <th className="table-header px-4 py-3 text-right">Expected result</th>
-                    <th className="table-header px-4 py-3 text-right">Actions</th>
-                  </tr>
+                  <th className="table-header px-4 py-3 w-10">#</th>
+                  <th className="table-header px-4 py-3">Action</th>
+                  <th className="table-header px-4 py-3">Expected result</th>
+                  <th className="table-header px-4 py-3 text-right">Actions</th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-[#C9D0D8]">
                 {testCase.steps.map((step, i) => (
@@ -175,7 +225,7 @@ export default async function TestCaseDetailPage({
                   {testCase.executions.map((e) => (
                     <tr key={e.id}>
                       <td className="px-4 py-3">
-                        <span className={`badge ${e.status === "PASSED" ? "status-pass" : e.status === "FAILED" ? "status-fail" : "status-neutral"}`}>
+                        <span className={`badge ${statusBadge(e.status)}`}>
                           {e.status}
                         </span>
                       </td>
@@ -188,40 +238,40 @@ export default async function TestCaseDetailPage({
               </table>
             </div>
           )}
-        </div>
 
-        {testCase.versions.length > 0 && (
-          <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
-            <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Version History</h2>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[#F5F7F9]">
-                <tr>
-                  <th className="table-header px-4 py-3">Version</th>
-                  <th className="table-header px-4 py-3">Changed by</th>
-                  <th className="table-header px-4 py-3">Changed at</th>
-                  <th className="table-header px-4 py-3 text-right">Key</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#C9D0D8]">
-                {testCase.versions.map((v) => (
-                  <tr key={v.id} className="hover:bg-[#EDF0F3]">
-                    <td className="px-4 py-3 text-[#1B2430] font-medium">v{v.version}</td>
-                    <td className="px-4 py-3 text-[#5B6675]">{v.changedBy?.name || "System"}</td>
-                    <td className="px-4 py-3 text-[#5B6675] text-xs">{new Date(v.changedAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-right text-[#5B6675]">{v.key}</td>
+          {testCase.versions.length > 0 && (
+            <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
+              <h2 className="text-sm font-semibold text-[#1B2430] mb-3">Version History</h2>
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#F5F7F9]">
+                  <tr>
+                    <th className="table-header px-4 py-3">Version</th>
+                    <th className="table-header px-4 py-3">Changed by</th>
+                    <th className="table-header px-4 py-3">Changed at</th>
+                    <th className="table-header px-4 py-3 text-right">Key</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-[#C9D0D8]">
+                  {testCase.versions.map((v) => (
+                    <tr key={v.id} className="hover:bg-[#EDF0F3]">
+                      <td className="px-4 py-3 text-[#1B2430] font-medium">v{v.version}</td>
+                      <td className="px-4 py-3 text-[#5B6675]">{v.changedBy?.name || "System"}</td>
+                      <td className="px-4 py-3 text-[#5B6675] text-xs">{new Date(v.changedAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-right text-[#5B6675]">{v.key}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Metadata</h3>
             <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="space-y-1">
-                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Key</p>
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test Case ID</p>
                 <p className="text-[#1B2430] font-medium">{testCase.key}</p>
               </div>
               <div className="space-y-1">
@@ -229,29 +279,93 @@ export default async function TestCaseDetailPage({
                 <p className="text-[#5B6675]">{testCase.project?.name || "—"}</p>
               </div>
               <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test Type</p>
+                <p className="text-[#5B6675]">{testCase.testType || "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test Level</p>
+                <p className="text-[#5B6675]">{testCase.testLevel || "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test Technique</p>
+                <p className="text-[#5B6675]">{testCase.testTechnique || "—"}</p>
+              </div>
+              <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Priority</p>
                 <p className="text-[#5B6675]"><span className="badge status-pass">{testCase.priority}</span></p>
               </div>
-              {testCase.testType && (
-                <div className="space-y-1">
-                  <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test type</p>
-                  <p className="text-[#5B6675]"><span className="badge status-accent">{testCase.testType}</span></p>
-                </div>
-              )}
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Severity</p>
                 <p className="text-[#5B6675]">{testCase.severity || "—"}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Status</p>
-                <p className="text-[#5B6675]"><span className="badge status-neutral">{testCase.status}</span></p>
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Execution Status</p>
+                <p className="text-[#5B6675]"><span className={`badge ${statusBadge(testCase.status)}`}>{testCase.status}</span></p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Automation Status</p>
+                <p className="text-[#5B6675]">{testCase.automationStatus}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Test Environment</p>
+                <p className="text-[#5B6675]">{testCase.testEnvironment || "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Module / Feature</p>
+                <p className="text-[#5B6675]">{testCase.component || "—"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Owner</p>
                 <p className="text-[#5B6675]">{testCase.owner?.name || "—"}</p>
               </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Reviewer</p>
+                <p className="text-[#5B6675]">{testCase.reviewer?.name || "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Est. Duration</p>
+                <p className="text-[#5B6675]">{testCase.estimatedDuration ? testCase.estimatedDuration + " min" : "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Created</p>
+                <p className="text-[#5B6675] text-xs">{new Date(testCase.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Updated</p>
+                <p className="text-[#5B6675] text-xs">{new Date(testCase.updatedAt).toLocaleDateString()}</p>
+              </div>
+              {testCase.labels && testCase.labels.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-[#5B6675] uppercase tracking-wider">Tags</p>
+                  <div className="flex flex-wrap gap-1">
+                    {testCase.labels.map((label) => (
+                      <span key={label} className="text-xs px-2 py-1 bg-[#EDF0F3] rounded text-[#5B6675]">{label}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {testCase.requirementLinks.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-[#5B6675] uppercase tracking-wider">Linked Requirements</p>
+                  <ul className="space-y-1 text-xs text-[#5B6675]">
+                    {testCase.requirementLinks.map((rl) => (
+                      <li key={rl.requirementId}>{rl.requirement.key} — {rl.requirement.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
+
+          {testCase.automationScriptLink && (
+            <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
+              <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Automation</h3>
+              <div className="space-y-2 text-sm">
+                <p className="text-xs text-[#5B6675] uppercase tracking-wider">Script / Link</p>
+                <a href={testCase.automationScriptLink} className="text-[#1F6F8B] hover:underline text-sm break-all">{testCase.automationScriptLink}</a>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
             <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Attachments</h3>
@@ -279,10 +393,11 @@ export default async function TestCaseDetailPage({
             ) : (
               <p className="text-sm text-[#5B6675]">No attachments.</p>
             )}
+          </div>
 
           {testCase.defects.length > 0 && (
             <div className="bg-white border border-[#C9D0D8] rounded p-[28px]">
-              <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Linked defects</h3>
+              <h3 className="text-sm font-semibold text-[#1B2430] mb-3">Linked Defects</h3>
               <ul className="space-y-2 text-sm text-[#5B6675]">
                 {testCase.defects.map((d) => (
                   <li key={d.id}>
@@ -299,6 +414,5 @@ export default async function TestCaseDetailPage({
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

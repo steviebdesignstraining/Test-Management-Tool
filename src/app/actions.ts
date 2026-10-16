@@ -14,25 +14,128 @@ export async function createProject(formData: FormData) {
 export async function createTestCase(formData: FormData) {
   const key = formData.get("key") as string;
   const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const objective = formData.get("objective") as string;
+  const preconditions = formData.get("preconditions") as string;
+  const testData = formData.get("testData") as string;
   const projectId = formData.get("projectId") as string;
   const ownerId = formData.get("ownerId") as string;
+  const reviewerId = formData.get("reviewerId") as string || undefined;
   const testType = formData.get("testType") as string || undefined;
-  const gherkinText = formData.get("gherkinText") as string || undefined;
+  const testLevel = formData.get("testLevel") as string || undefined;
+  const testTechnique = formData.get("testTechnique") as string || undefined;
+  const testEnvironment = formData.get("testEnvironment") as string || undefined;
+  const priority = formData.get("priority") as string || "MEDIUM";
+  const severity = formData.get("severity") as string || "MEDIUM";
+  const status = formData.get("status") as string || "NOT_RUN";
+  const automationStatus = formData.get("automationStatus") as string || "MANUAL";
+  const automationScriptLink = formData.get("automationScriptLink") as string || undefined;
+  const component = formData.get("component") as string || undefined;
+  const estimatedDuration = formData.get("estimatedDuration") as string || undefined;
+  const actualResult = formData.get("actualResult") as string || undefined;
+  const requirementLinksRaw = formData.get("requirementLinks") as string || undefined;
+  const labelsRaw = formData.get("labels") as string || undefined;
 
-  if (!key || !title || !projectId || !ownerId) {
-    throw new Error("Key, title, project and owner are required");
+  // Steps as parallel arrays from FormData.getAll
+  const stepActions = formData.getAll("stepActions") as string[];
+  const stepExpectedResults = formData.getAll("stepExpectedResults") as string[];
+  const stepData = formData.getAll("stepData") as string[];
+
+  if (!title || !objective || !preconditions || !projectId || !ownerId) {
+    throw new Error("Title, objective, preconditions, project and owner are required");
   }
 
-  const cleanKey = sanitizeInput(key).slice(0, FIELD_LIMITS.key);
-  const cleanTitle = sanitizeInput(title).slice(0, FIELD_LIMITS.title);
-  const cleanTestId = testType ? sanitizeInput(testType) : undefined;
-  const cleanGherkin = gherkinText ? sanitizeInput(gherkinText).slice(0, FIELD_LIMITS.gherkinText) : undefined;
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project) {
+    throw new Error("Project not found");
+  }
 
-  await prisma.testCase.upsert({
-    where: { key: cleanKey },
-    update: { title: cleanTitle, projectId, ownerId, status: "DRAFT", testType: cleanTestId || null, gherkinText: cleanGherkin || null },
-    create: { key: cleanKey, title: cleanTitle, projectId, ownerId, status: "DRAFT", testType: cleanTestId || null, gherkinText: cleanGherkin || null },
+  const owner = await prisma.user.findUnique({ where: { id: ownerId } });
+  if (!owner) {
+    throw new Error("Owner user not found");
+  }
+
+  if (reviewerId) {
+    const reviewer = await prisma.user.findUnique({ where: { id: reviewerId } });
+    if (!reviewer) {
+      throw new Error("Reviewer user not found");
+    }
+  }
+
+  let finalKey = key;
+  if (!finalKey || finalKey.trim().length === 0) {
+    const projectPrefix = project.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6) || "TC";
+    const lastCase = await prisma.testCase.findFirst({
+      where: { projectId },
+      orderBy: { key: "desc" },
+      select: { key: true },
+    });
+    let nextNum = 1;
+    if (lastCase?.key) {
+      const match = lastCase.key.match(/(\d+)$/);
+      if (match) nextNum = parseInt(match[1]) + 1;
+    }
+    finalKey = `${projectPrefix}-${String(nextNum).padStart(3, "0")}`;
+  } else {
+    finalKey = sanitizeInput(key).toUpperCase().slice(0, FIELD_LIMITS.key);
+    const existing = await prisma.testCase.findUnique({ where: { key: finalKey } });
+    if (existing) {
+      throw new Error(`Test case key "${finalKey}" already exists`);
+    }
+  }
+
+  const labels: string[] | undefined = labelsRaw ? labelsRaw.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
+
+  const tc = await prisma.testCase.create({
+    data: {
+      key: finalKey,
+      title: sanitizeInput(title).slice(0, FIELD_LIMITS.title),
+      description: description ? sanitizeInput(description).slice(0, FIELD_LIMITS.description) : null,
+      objective: sanitizeInput(objective).slice(0, FIELD_LIMITS.objective),
+      preconditions: sanitizeInput(preconditions).slice(0, FIELD_LIMITS.preconditions),
+      testData: testData ? sanitizeInput(testData).slice(0, FIELD_LIMITS.testData) : null,
+      projectId,
+      ownerId,
+      reviewerId,
+      testType,
+      testLevel,
+      testTechnique,
+      testEnvironment,
+      priority,
+      severity,
+      status,
+      automationStatus,
+      automationScriptLink,
+      component,
+      labels,
+      estimatedDuration: estimatedDuration ? parseInt(estimatedDuration, 10) : null,
+      actualResult: actualResult ? sanitizeInput(actualResult) : null,
+      steps: {
+        create: stepActions
+          .filter((action, i) => action.trim().length > 0)
+          .map((action, i) => ({
+            action: sanitizeInput(action).slice(0, FIELD_LIMITS.description),
+            expectedResult: sanitizeInput(stepExpectedResults[i] || "").slice(0, FIELD_LIMITS.description),
+            data: stepData[i] ? sanitizeInput(stepData[i]) : null,
+            position: i + 1,
+          })),
+      },
+    },
   });
+
+  // Link requirements if provided
+  if (requirementLinksRaw) {
+    const reqIds = requirementLinksRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    for (const reqId of reqIds) {
+      const existingReq = await prisma.requirement.findUnique({ where: { key: reqId } });
+      if (existingReq) {
+        await prisma.requirementTestCase.create({
+          data: { requirementId: existingReq.id, testCaseId: tc.id },
+        }).catch(() => {}); // Ignore duplicates
+      }
+    }
+  }
+
   revalidatePath("/test-cases");
 }
 

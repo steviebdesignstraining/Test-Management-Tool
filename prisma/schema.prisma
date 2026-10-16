@@ -35,6 +35,7 @@ model User {
   testCaseVersions       TestCaseVersion[]    @relation("TestCaseVersion_changedBy")
   ownedRequirements      Requirement[]        @relation("Requirement_owner")
   userSettings           UserSettings?        @relation("UserSettings_user")
+  invitedTestCases       TestCase[]           @relation("TestCase_reviewer")
   invitationTokens       InvitationToken[]    @relation("invitationTokens_creator")
   projectInvitations     ProjectInvitation[]  @relation("projectInvitations_invitee")
   createdInvitations     ProjectInvitation[]  @relation("ProjectInvitation_creator")
@@ -110,23 +111,32 @@ model TestCase {
   preconditions     String?
   testData          String?
   testType          String? // e.g. "FUNCTIONAL", "UI", "API", "DATABASE", "PERFORMANCE", "SECURITY", "ACCESSIBILITY"
+  testLevel         String? // UNIT, INTEGRATION, SYSTEM, ACCEPTANCE
+  testTechnique     String? // Equivalence partitioning, boundary-value analysis, decision tables, state transitions, etc.
   gherkinText       String? // Gherkin scenario text for BDD tests
   priority          String                @default("MEDIUM")
   severity          String                @default("MEDIUM")
+  status            String                @default("DRAFT")
+  automationStatus  String                @default("MANUAL") // MANUAL, AUTOMATED, CANDIDATE, NOT_SUITABLE
+  automationScriptLink String?
+  testEnvironment   String? // DEVELOPMENT, QA, STAGING, PRODUCTION
   component         String?
   labels            String[] // We'll use a string array for labels; in Postgres we can use text[]
   owner             User                  @relation("TestCase_owner", fields: [ownerId], references: [id])
   ownerId           String
+  reviewer          User?                 @relation("TestCase_reviewer", fields: [reviewerId], references: [id])
+  reviewerId        String?
   project           Project               @relation("TestCase_project", fields: [projectId], references: [id])
   projectId         String
-  status            String                @default("DRAFT")
+  requirementLinks  RequirementTestCase[] @relation("RequirementTestCase_testCase")
+  testSuiteId       String?
   estimatedDuration Int? // in minutes
+  actualResult      String?
   steps             TestStep[]            @relation("TestStep_testCase")
   executions        TestExecution[]       @relation("TestExecution_testCase")
   defects           Defect[]              @relation("Defect_testCase")
   planCases         TestPlanCase[]        @relation("TestPlanCase_testCase")
   attachments       Attachment[]          @relation("testCaseAttachments")
-  requirementLinks  RequirementTestCase[] @relation("RequirementTestCase_testCase")
   versions          TestCaseVersion[]     @relation("TestCaseVersion_testCase")
   parameters        TestParameter[]       @relation("TestParameter_testCase")
   createdAt         DateTime              @default(now())

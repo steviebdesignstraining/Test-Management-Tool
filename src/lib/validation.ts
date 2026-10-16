@@ -136,6 +136,33 @@ export function validateTestType(value?: string): ValidationResult {
   return { valid: true };
 }
 
+export function validateTestLevel(value?: string): ValidationResult {
+  if (!value) return { valid: true };
+  const valid = ["UNIT", "INTEGRATION", "SYSTEM", "ACCEPTANCE"];
+  if (!valid.includes(value.toUpperCase())) {
+    return { valid: false, error: `Test level must be one of: ${valid.join(", ")}` };
+  }
+  return { valid: true };
+}
+
+export function validateAutomationStatus(value?: string): ValidationResult {
+  if (!value) return { valid: true };
+  const valid = ["MANUAL", "AUTOMATED", "CANDIDATE", "NOT_SUITABLE"];
+  if (!valid.includes(value.toUpperCase())) {
+    return { valid: false, error: `Automation status must be one of: ${valid.join(", ")}` };
+  }
+  return { valid: true };
+}
+
+export function validateTestEnvironment(value?: string): ValidationResult {
+  if (!value) return { valid: true };
+  const valid = ["DEVELOPMENT", "QA", "STAGING", "PRODUCTION"];
+  if (!valid.includes(value.toUpperCase())) {
+    return { valid: false, error: `Test environment must be one of: ${valid.join(", ")}` };
+  }
+  return { valid: true };
+}
+
 export const FIELD_LIMITS = {
   email: 254,
   password: 128,
