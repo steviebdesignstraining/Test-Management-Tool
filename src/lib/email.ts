@@ -36,6 +36,27 @@ export interface SendEmailOptions {
 export async function sendEmail(options: SendEmailOptions): Promise<{ ok: boolean; error?: string }> {
   const transport = getTransporter();
   if (!transport) {
+    // Dev-mode fallback: log verification/password-reset links to console
+    // when SMTP is not configured, so the flow can still be tested locally.
+    if (options.subject.includes("Verify your email")) {
+      const match = options.html.match(/href="([^"]*verify-email\/[^"]+)"/);
+      const url = match ? match[1] : options.text?.match(/https?:\/\/[^\s]+/)?.[0];
+      console.log("\n" + "=".repeat(60));
+      console.log("[DEV EMAIL] Verification email (SMTP not configured):");
+      console.log("  To:", options.to);
+      console.log("  Subject:", options.subject);
+      console.log("  Verify URL:", url);
+      console.log("=".repeat(60) + "\n");
+    } else if (options.subject.includes("Reset your password")) {
+      const match = options.html.match(/href="([^"]*reset-password[^"]+)"/);
+      const url = match ? match[1] : options.text?.match(/https?:\/\/[^\s]+/)?.[0];
+      console.log("\n" + "=".repeat(60));
+      console.log("[DEV EMAIL] Password reset email (SMTP not configured):");
+      console.log("  To:", options.to);
+      console.log("  Subject:", options.subject);
+      console.log("  Reset URL:", url);
+      console.log("=".repeat(60) + "\n");
+    }
     return {
       ok: false,
       error: "SMTP not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM.",

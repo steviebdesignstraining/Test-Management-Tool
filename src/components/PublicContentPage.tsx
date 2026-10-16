@@ -4,6 +4,7 @@ interface ContentItem {
   title: string;
   description: string;
   href?: string;
+  icon?: React.ReactNode;
 }
 
 interface PublicContentPageProps {
@@ -46,11 +47,13 @@ export default function PublicContentPage({ badge, title, subtitle, items }: Pub
             {items.map((item) => (
               item.href ? (
                 <Link key={item.title} href={item.href} className="block p-6 border border-[#C9D0D8] rounded-lg bg-white hover:bg-[#F9FAFB] transition-colors">
+                  {item.icon && <div className="mb-4 w-8 h-8">{item.icon}</div>}
                   <h3 className="text-base font-semibold mb-3">{item.title}</h3>
                   <p className="text-sm text-[#5B6675] leading-relaxed">{item.description}</p>
                 </Link>
               ) : (
                 <div key={item.title} className="p-6 border border-[#C9D0D8] rounded-lg bg-white">
+                  {item.icon && <div className="mb-4 w-8 h-8">{item.icon}</div>}
                   <h3 className="text-base font-semibold mb-3">{item.title}</h3>
                   <p className="text-sm text-[#5B6675] leading-relaxed">{item.description}</p>
                 </div>

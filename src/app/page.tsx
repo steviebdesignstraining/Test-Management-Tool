@@ -1,19 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import {
+  ShieldIcon,
+  UsersIcon,
+  ClipboardIcon,
+  TestCasesIcon,
+  TestPlansIcon,
+  AiAssistantIcon,
+} from "@/components/icons";
 
 const features = [
   {
     title: "Role-based permissions",
     description: "Owner, Admin, QA Lead, Tester, Developer, and Read-only roles keep the right people in control.",
+    icon: <ShieldIcon className="w-6 h-6 text-[#1F6F8B]" />,
   },
   {
     title: "Tenant isolation",
     description: "Users never access another organisation's records — every project is scoped to its workspace.",
+    icon: <UsersIcon className="w-6 h-6 text-[#1F6F8B]" />,
   },
   {
     title: "Audit history",
     description: "Every important workflow change is logged so you always know who did what and when.",
+    icon: <ClipboardIcon className="w-6 h-6 text-[#1F6F8B]" />,
   },
 ];
 
@@ -68,6 +79,41 @@ export default function HomePage() {
               Create account
             </Link>
           </div>
+
+          {/* Hero illustration section */}
+          <div className="mt-16 flex justify-center">
+            <div className="w-full max-w-4xl p-6 border border-[#C9D0D8] rounded-lg bg-[#F9FAFB]">
+              <div className="grid md:grid-cols-3 gap-6 text-left">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 flex-shrink-0 text-[#1F6F8B]">
+                    <TestCasesIcon />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#1B2430]">Test cases</h4>
+                    <p className="text-xs text-[#5B6675]">Manual, API, BDD, and automated cases with steps and parameters.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 flex-shrink-0 text-[#1F6F8B]">
+                    <TestPlansIcon />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#1B2430]">Test plans</h4>
+                    <p className="text-xs text-[#5B6675]">Organise cases into suites, plans, and execution cycles.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 flex-shrink-0 text-[#1F6F8B]">
+                    <AiAssistantIcon />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#1B2430]">AI assistant</h4>
+                    <p className="text-xs text-[#5B6675]">Generate test cases, analyse failures, and get quality insights.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="bg-white border-y border-[#C9D0D8] py-16">
@@ -76,6 +122,9 @@ export default function HomePage() {
             <div className="grid md:grid-cols-3 gap-8">
               {features.map((f) => (
                 <div key={f.title} className="p-6 border border-[#C9D0D8] rounded-lg bg-[#F9FAFB]">
+                  <div className="w-10 h-10 mb-4 rounded bg-[#E4F0F4] flex items-center justify-center text-[#1F6F8B]">
+                    {f.icon}
+                  </div>
                   <h3 className="text-base font-semibold mb-3">{f.title}</h3>
                   <p className="text-sm text-[#5B6675] leading-relaxed">{f.description}</p>
                 </div>

@@ -27,9 +27,17 @@ export default function RegisterPage() {
         setLoading(false);
         return;
       }
-      setMessage(
-        "Account created. A verification email has been sent — please verify your email before signing in.",
-      );
+      if (data.verificationSent) {
+        setMessage(
+          "Account created. A verification email has been sent — please verify your email before signing in.",
+        );
+      } else {
+        setMessage(
+          `Account created. Email delivery is not configured (${
+            data.emailError || "SMTP not set up"
+          }). Check the server console for your verification link, or sign in and request a resend.`,
+        );
+      }
       setLoading(false);
     } catch {
       setError("Unable to register. Please try again.");

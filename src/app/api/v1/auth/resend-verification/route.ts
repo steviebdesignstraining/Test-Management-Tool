@@ -39,9 +39,9 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send verification email (non-blocking).
+    // Send verification email.
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
-    void sendEmail({
+    const emailResult = await sendEmail({
       to: email,
       subject: "Verify your email address",
       html: verificationEmailHtml(token, baseUrl),
@@ -53,12 +53,16 @@ export async function POST(req: Request) {
       action: "USER.RESEND_VERIFICATION",
       entity: "User",
       entityId: user.id,
-      metadata: { email },
+      metadata: { email, emailSent: emailResult.ok },
       ip,
     });
 
     return json({
-      message: "If an account exists, a verification link has been sent.",
+      message: emailResult.ok
+        ? "Verification link has been sent."
+        : "Verification email could not be sent. SMTP may not be configured.",
+      emailSent: emailResult.ok,
+      emailError: emailResult.ok ? undefined : emailResult.error,
     });
   } catch {
     return error("Resend verification failed", 500);

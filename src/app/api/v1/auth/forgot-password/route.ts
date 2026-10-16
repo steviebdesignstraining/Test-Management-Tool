@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     });
 
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
-    void sendEmail({
+    const emailResult = await sendEmail({
       to: cleanEmail,
       subject: "Reset your password",
       html: resetPasswordEmailHtml(token, baseUrl),
@@ -66,13 +66,16 @@ export async function POST(req: Request) {
       action: "USER.PASSWORD_RESET_REQUESTED",
       entity: "User",
       entityId: user.id,
-      metadata: { email: cleanEmail },
+      metadata: { email: cleanEmail, emailSent: emailResult.ok },
       ip,
     });
 
     return json({
-      message: "If an account exists, a reset link has been sent.",
-      resetSent: true,
+      message: emailResult.ok
+        ? "If an account exists, a reset link has been sent."
+        : "Reset email could not be sent. SMTP may not be configured.",
+      resetSent: emailResult.ok,
+      emailError: emailResult.ok ? undefined : emailResult.error,
     });
   } catch {
     return error("Password reset request failed", 500);

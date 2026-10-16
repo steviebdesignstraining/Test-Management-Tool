@@ -3,6 +3,27 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  OverviewIcon,
+  TestCasesIcon,
+  TestRunsIcon,
+  TestPlansIcon,
+  StrategiesIcon,
+  AiAssistantIcon,
+  RequirementsIcon,
+  AutomationIcon,
+  CiCdIcon,
+  ReportsIcon,
+  DefectsIcon,
+  AnalyticsIcon,
+  IntegrationsIcon,
+  TeamIcon,
+  SettingsIcon,
+  OrganisationIcon,
+  ProjectsIcon,
+  UsersIcon,
+  ClipboardIcon,
+} from "@/components/icons";
 
 interface NavItem {
   name: string;
@@ -12,53 +33,51 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Overview", href: "/overview" },
+  { name: "Overview", href: "/overview", icon: <OverviewIcon /> },
   {
     name: "Tests",
     href: "/test-cases",
+    icon: <TestCasesIcon />,
     children: [
-      { name: "Test Cases", href: "/test-cases" },
-      { name: "Test Runs", href: "/test-runs" },
-      { name: "Test Plans", href: "/test-plans" },
-      { name: "Test Strategies", href: "/strategies" },
+      { name: "Test Cases", href: "/test-cases", icon: <TestCasesIcon /> },
+      { name: "Test Runs", href: "/test-runs", icon: <TestRunsIcon /> },
+      { name: "Test Plans", href: "/test-plans", icon: <TestPlansIcon /> },
+      { name: "Test Strategies", href: "/strategies", icon: <StrategiesIcon /> },
     ],
   },
-  {
-    name: "AI Assistant",
-    href: "/ai-assistant",
-  },
-  {
-    name: "Requirements",
-    href: "/requirements",
-  },
+  { name: "AI Assistant", href: "/ai-assistant", icon: <AiAssistantIcon /> },
+  { name: "Requirements", href: "/requirements", icon: <RequirementsIcon /> },
   {
     name: "Automation",
     href: "/automation",
+    icon: <AutomationIcon />,
     children: [
-      { name: "Automation", href: "/automation" },
-      { name: "CI/CD Runs", href: "/ci-cd" },
-      { name: "Reports / Allure", href: "/reports" },
+      { name: "Automation", href: "/automation", icon: <AutomationIcon /> },
+      { name: "CI/CD Runs", href: "/ci-cd", icon: <CiCdIcon /> },
+      { name: "Reports / Allure", href: "/reports", icon: <ReportsIcon /> },
     ],
   },
-  { name: "Defects", href: "/defects" },
+  { name: "Defects", href: "/defects", icon: <DefectsIcon /> },
   {
     name: "Quality",
     href: "/analytics",
+    icon: <AnalyticsIcon />,
     children: [
-      { name: "Analytics / AI Insights", href: "/analytics" },
-      { name: "Audit Logs", href: "/audit-logs" },
+      { name: "Analytics / AI Insights", href: "/analytics", icon: <AnalyticsIcon /> },
+      { name: "Audit Logs", href: "/audit-logs", icon: <ClipboardIcon /> },
     ],
   },
-  { name: "Reports", href: "/reports" },
+  { name: "Reports", href: "/reports", icon: <ReportsIcon /> },
   {
     name: "Workspace",
     href: "/organisations",
+    icon: <TeamIcon />,
     children: [
-      { name: "Organisations", href: "/organisations" },
-      { name: "Projects", href: "/projects" },
-      { name: "Team and Access", href: "/team" },
-      { name: "Integrations", href: "/integrations" },
-      { name: "Settings", href: "/settings" },
+      { name: "Organisations", href: "/organisations", icon: <OrganisationIcon /> },
+      { name: "Projects", href: "/projects", icon: <ProjectsIcon /> },
+      { name: "Team and Access", href: "/team", icon: <UsersIcon /> },
+      { name: "Integrations", href: "/integrations", icon: <IntegrationsIcon /> },
+      { name: "Settings", href: "/settings", icon: <SettingsIcon /> },
     ],
   },
 ];
@@ -102,12 +121,13 @@ export default function Sidebar() {
                   e.preventDefault();
                   router.push(item.href);
                 }}
-                className={`flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "bg-[#E4F0F4] text-[#134F63]"
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                 }}`}
               >
+                <span className="w-5 text-center">{item.icon}</span>
                 {item.name}
               </Link>
             );
@@ -118,12 +138,13 @@ export default function Sidebar() {
               <button
                 type="button"
                 onClick={() => toggleGroup(item.name)}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                className={`flex w-full items-center gap-3 justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "bg-[#E4F0F4] text-[#134F63]"
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                 }}`}
               >
+                <span className="w-5 text-center">{item.icon}</span>
                 <span>{item.name}</span>
                 <span
                   className={`transform transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
@@ -147,12 +168,13 @@ export default function Sidebar() {
                           e.preventDefault();
                           router.push(child.href);
                         }}
-                        className={`block text-xs rounded-lg px-3 py-2 transition-all duration-200 ${
+                        className={`flex items-center gap-3 block text-xs rounded-lg px-3 py-2 transition-all duration-200 ${
                           childActive
                             ? "bg-[#E4F0F4] text-[#134F63] font-medium"
                             : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                         }}`}
                       >
+                        <span className="w-4 text-center">{child.icon}</span>
                         {child.name}
                       </Link>
                     );
@@ -166,7 +188,7 @@ export default function Sidebar() {
 
       <div className="p-3 border-t border-[#C9D0D8]">
         <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430] transition-all duration-200">
-          <span className="w-6 text-center">☰</span>
+          <span className="w-5 text-center">☰</span>
           <span>Profile</span>
         </button>
       </div>

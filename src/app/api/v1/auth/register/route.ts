@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     });
 
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
-    void sendEmail({
+    const emailResult = await sendEmail({
       to: email,
       subject: "Verify your email address",
       html: verificationEmailHtml(verification.token, baseUrl),
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       action: "USER.REGISTER",
       entity: "User",
       entityId: user.id,
-      metadata: { email: sanitizeInput(String(email)) },
+      metadata: { email: sanitizeInput(String(email)), emailSent: emailResult.ok },
       ip,
     });
 
@@ -77,7 +77,8 @@ export async function POST(req: Request) {
       {
         user: { id: user.id, email: user.email, name: user.name },
         emailVerified: false,
-        verificationSent: true,
+        verificationSent: emailResult.ok,
+        emailError: emailResult.ok ? undefined : emailResult.error,
         sessionToken: token,
       },
       201,
