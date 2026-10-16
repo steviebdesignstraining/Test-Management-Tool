@@ -3,6 +3,9 @@ import { addTestStep, updateTestStep, deleteTestStep, uploadExecutionAttachment 
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { FIELD_LIMITS } from "@/lib/validation";
+import TestCaseParameters from "@/components/test-case-parameters";
+
+export const dynamic = "force-dynamic";
 
 export default async function TestCaseDetailPage({
   params,
@@ -20,6 +23,7 @@ export default async function TestCaseDetailPage({
       defects: true,
       versions: { orderBy: { version: "desc" }, include: { changedBy: { select: { name: true } } } },
       attachments: { include: { uploadedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
+      parameters: { orderBy: { position: "asc" } },
     },
   });
 
@@ -290,6 +294,8 @@ export default async function TestCaseDetailPage({
               </ul>
             </div>
           )}
+
+          <TestCaseParameters testCaseId={testCaseId} initialParameters={testCase.parameters} />
         </div>
       </div>
     </div>

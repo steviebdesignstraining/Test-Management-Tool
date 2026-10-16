@@ -67,19 +67,23 @@ model OrganisationMember {
 
 /// A Project belongs to an organisation and contains test cases, plans, etc.
 model Project {
-  id             String              @id @default(cuid())
-  name           String
-  description    String?
-  organisation   Organisation        @relation("Project_organisation", fields: [organisationId], references: [id])
-  organisationId String
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  members        ProjectMember[]     @relation("projectMembers")
-  roles          ProjectRole[]       @relation("ProjectRole_project")
-  invitations    ProjectInvitation[] @relation("ProjectInvitation_project")
-  testCases      TestCase[]          @relation("TestCase_project")
-  testPlans      TestPlan[]          @relation("TestPlan_project")
-  requirements   Requirement[]       @relation("Requirement_project")
+  id                     String                  @id @default(cuid())
+  name                   String
+  description            String?
+  organisation           Organisation            @relation("Project_organisation", fields: [organisationId], references: [id])
+  organisationId         String
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  members                ProjectMember[]         @relation("projectMembers")
+  roles                  ProjectRole[]           @relation("ProjectRole_project")
+  invitations            ProjectInvitation[]     @relation("ProjectInvitation_project")
+  testCases              TestCase[]              @relation("TestCase_project")
+  testPlans              TestPlan[]              @relation("TestPlan_project")
+  requirements           Requirement[]           @relation("Requirement_project")
+  apiCollections         ApiCollection[]         @relation("ApiCollection_project")
+  thirdPartyIntegrations ThirdPartyIntegration[] @relation("ThirdPartyIntegration_project")
+  allureReports          AllureReport[]          @relation("AllureReport_project")
+  ciRuns                 CiRun[]                 @relation("CiRun_project")
 }
 
 /// The ProjectMember model connects users to projects with a role.
@@ -124,6 +128,7 @@ model TestCase {
   attachments       Attachment[]          @relation("testCaseAttachments")
   requirementLinks  RequirementTestCase[] @relation("RequirementTestCase_testCase")
   versions          TestCaseVersion[]     @relation("TestCaseVersion_testCase")
+  parameters        TestParameter[]       @relation("TestParameter_testCase")
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 }
@@ -433,6 +438,161 @@ model TeamSetting {
   updatedAt      DateTime      @updatedAt
 
   @@unique([organisationId, key])
+}
+
+/// A TestParameter is a named variable/value pair attached to a test case
+/// for data-driven testing (e.g. base_url, username, payload fixture).
+model TestParameter {
+  id          String   @id @default(cuid())
+  testCase    TestCase @relation("TestParameter_testCase", fields: [testCaseId], references: [id])
+  testCaseId  String
+  name        String // parameter name e.g. "base_url", "username", "api_key"
+  value       String // parameter value
+  description String?
+  isRequired  Boolean  @default(false)
+  position    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([testCaseId, name])
+}
+
+/// An ApiCollection groups related API endpoints (like a Postman collection).
+model ApiCollection {
+  id          String        @id @default(cuid())
+  project     Project       @relation("ApiCollection_project", fields: [projectId], references: [id])
+  projectId   String
+  name        String
+  description String?
+  source      String        @default("MANUAL") // MANUAL, POSTMAN, INSOMNIA
+  externalId  String? // Postman collection ID, Insomnia export ID, etc.
+  externalUrl String? // link to external collection
+  endpoints   ApiEndpoint[] @relation("ApiEndpoint_collection")
+  monitors    ApiMonitor[]  @relation("ApiMonitor_collection")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+/// An ApiEndpoint is a single HTTP endpoint to monitor/test.
+model ApiEndpoint {
+  id                 String             @id @default(cuid())
+  collection         ApiCollection      @relation("ApiEndpoint_collection", fields: [collectionId], references: [id])
+  collectionId       String
+  name               String
+  method             String // GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+  url                String
+  headers            Json? // { "Content-Type": "application/json" }
+  queryParams        Json? // [{"key": "page", "value": "1"}]
+  body               Json? // request body for POST/PUT/PATCH
+  authType           String? // NONE, BASIC, BEARER, API_KEY
+  authConfig         Json? // { "username": "...", "password": "..." }
+  timeout            Int                @default(30000) // ms
+  expectedStatusCode Int                @default(200)
+  monitors           ApiMonitor[]       @relation("ApiMonitor_endpoint")
+  results            ApiMonitorResult[] @relation("ApiMonitorResult_endpoint")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+/// An ApiMonitor schedules recurring checks of API endpoints.
+model ApiMonitor {
+  id           String          @id @default(cuid())
+  collection   ApiCollection   @relation("ApiMonitor_collection", fields: [collectionId], references: [id])
+  collectionId String
+  endpoint     ApiEndpoint?    @relation("ApiMonitor_endpoint", fields: [endpointId], references: [id])
+  endpointId   String?
+  name         String
+  schedule     String // cron expression e.g. "*/5 * * * *"
+  isEnabled    Boolean         @default(true)
+  assertions   Json? // [{"path": "statusCode", "operator": "equals", "value": 200}]
+  runs         ApiMonitorRun[] @relation("ApiMonitorRun_monitor")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+/// A single execution of an ApiMonitor.
+model ApiMonitorRun {
+  id        String             @id @default(cuid())
+  monitor   ApiMonitor         @relation("ApiMonitorRun_monitor", fields: [monitorId], references: [id])
+  monitorId String
+  status    String // PASSED, FAILED, PARTIAL, ERROR
+  startedAt DateTime
+  endedAt   DateTime?
+  duration  Int? // ms
+  results   ApiMonitorResult[] @relation("ApiMonitorResult_run")
+  createdAt DateTime           @default(now())
+}
+
+/// Result of monitoring one endpoint within a monitor run.
+model ApiMonitorResult {
+  id           String        @id @default(cuid())
+  run          ApiMonitorRun @relation("ApiMonitorResult_run", fields: [runId], references: [id])
+  runId        String
+  endpoint     ApiEndpoint   @relation("ApiMonitorResult_endpoint", fields: [endpointId], references: [id])
+  endpointId   String
+  status       String // PASSED, FAILED, ERROR
+  statusCode   Int?
+  responseTime Int? // ms
+  responseBody String?
+  assertions   Json? // [{"name": "status", "passed": true, "actual": 200, "expected": 200}]
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+}
+
+/// A third-party integration configured for a project (e.g. Postman, Jira).
+model ThirdPartyIntegration {
+  id           String    @id @default(cuid())
+  project      Project   @relation("ThirdPartyIntegration_project", fields: [projectId], references: [id])
+  projectId    String
+  type         String // POSTMAN, JIRA, AZURE_DEVOPS, TRELLO, SLACK
+  name         String
+  config       Json? // { apiKey, collectionId, workspaceId, baseUrl, ... }
+  isEnabled    Boolean   @default(true)
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([projectId, type, name])
+}
+
+/// A CI/CD pipeline run ingested into TestHub for traceability.
+model CiRun {
+  id            String        @id @default(cuid())
+  project       Project       @relation("CiRun_project", fields: [projectId], references: [id])
+  projectId     String
+  pipelineId    String // external pipeline ID (GitHub Actions run ID, Jenkins build number, etc.)
+  pipelineName  String
+  buildNumber   Int
+  status        String // PENDING, RUNNING, PASSED, FAILED, CANCELLED
+  branch        String
+  commitSha     String
+  commitMessage String?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  duration      Int? // seconds
+  allureReport  AllureReport? @relation("AllureReport_ciRun")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+/// An Allure report ingested from CI/CD for test result traceability.
+model AllureReport {
+  id           String   @id @default(cuid())
+  project      Project  @relation("AllureReport_project", fields: [projectId], references: [id])
+  projectId    String
+  ciRun        CiRun?   @relation("AllureReport_ciRun", fields: [ciRunId], references: [id])
+  ciRunId      String?  @unique
+  name         String
+  url          String? // link to hosted Allure report
+  totalTests   Int
+  passedTests  Int
+  failedTests  Int
+  brokenTests  Int
+  skippedTests Int
+  duration     Int? // ms
+  resultsJson  Json? // raw Allure results JSON
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 /// Audit trail for configuration changes (e.g. role assignments, permission changes).

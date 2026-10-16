@@ -68,6 +68,16 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   };
 });
 
+let mockUser: { id: string; email: string; name: string | null; role: string } | null = null;
+
+vi.mock("@/lib/auth-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth-utils")>();
+  return {
+    ...actual,
+    getCurrentUser: vi.fn(() => mockUser),
+  };
+});
+
 describe("API Contract Tests", () => {
   let testContext: {
     org: { id: string };
@@ -79,6 +89,12 @@ describe("API Contract Tests", () => {
   beforeAll(async () => {
     await cleanupTestData();
     testContext = await createTestProjectWithUser();
+    mockUser = {
+      id: testContext.user.id,
+      email: testContext.user.email,
+      name: "Test User",
+      role: "USER",
+    };
   });
 
   afterAll(async () => {
@@ -666,35 +682,38 @@ describe("API Contract Tests", () => {
 
   describe("Analytics API", () => {
     it("returns analytics overview object", async () => {
-      const res = await analyticsOverviewGET();
+      const res = await analyticsOverviewGET(new Request("http://localhost/api/v1/analytics/overview"));
       const { status, body } = await parseResponse(res);
       expect(status).toBe(200);
-      expect(body).toHaveProperty("manualPassRate");
-      expect(body).toHaveProperty("automationPassRate");
-      expect(body).toHaveProperty("testCoverage");
-      expect(body).toHaveProperty("automationMappingCoverage");
-      expect(body).toHaveProperty("flakyRate");
+      expect(body).toHaveProperty("totalTestCases");
+      expect(body).toHaveProperty("totalExecutions");
+      expect(body).toHaveProperty("passRate");
+      expect(body).toHaveProperty("ciRuns");
+      expect(body).toHaveProperty("allureReports");
     });
 
     it("returns array for coverage analytics", async () => {
-      const res = await analyticsCoverageGET();
+      const res = await analyticsCoverageGET(new Request("http://localhost/api/v1/analytics/coverage"));
       const { status, body } = await parseResponse(res);
       expect(status).toBe(200);
-      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveProperty("typeCoverage");
+      expect(Array.isArray((body as { typeCoverage: unknown[] }).typeCoverage)).toBe(true);
     });
 
     it("returns array for trends analytics", async () => {
-      const res = await analyticsTrendsGET();
+      const res = await analyticsTrendsGET(new Request("http://localhost/api/v1/analytics/trends"));
       const { status, body } = await parseResponse(res);
       expect(status).toBe(200);
-      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveProperty("trend");
+      expect(Array.isArray((body as { trend: unknown[] }).trend)).toBe(true);
     });
 
     it("returns array for flaky-tests analytics", async () => {
-      const res = await analyticsFlakyGET();
+      const res = await analyticsFlakyGET(new Request("http://localhost/api/v1/analytics/flaky-tests"));
       const { status, body } = await parseResponse(res);
       expect(status).toBe(200);
-      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveProperty("flakyTests");
+      expect(Array.isArray((body as { flakyTests: unknown[] }).flakyTests)).toBe(true);
     });
   });
 

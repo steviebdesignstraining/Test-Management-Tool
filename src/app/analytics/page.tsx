@@ -9,37 +9,51 @@ import {
 } from "recharts";
 
 const TYPE_COLORS = ["#1F6F8B", "#0A8043", "#8F2A20", "#F59E0B", "#6B46C1", "#D94E48", "#0EA5E9", "#6366F1"];
-const LIFECYCLE_COLORS: Record<string, string> = {
-  OPEN: "#D94E48",
-  IN_PROGRESS: "#F59E0B",
-  RESOLVED: "#0A8043",
-  CLOSED: "#1F6F8B",
-};
 
-interface TestCase {
-  id: string;
+interface Overview {
+  totalTestCases: number;
+  totalExecutions: number;
+  passedExecutions: number;
+  failedExecutions: number;
+  passRate: number;
+  totalDefects: number;
+  openDefects: number;
+  ciRuns: number;
+  allureReports: number;
+}
+
+interface Coverage {
+  totalCases: number;
+  typeCoverage: { type: string; count: number }[];
+  planCoverage: { planId: string; planName: string; totalCases: number }[];
+  allureSummary: { id: string; name: string; totalTests: number; passedTests: number; failedTests: number; passRate: number; createdAt: string }[];
+}
+
+interface TrendPoint {
+  date: string;
+  passed: number;
+  failed: number;
+  total: number;
+}
+
+interface TrendData {
+  trend: TrendPoint[];
+  ciRuns: { id: string; pipelineName: string; buildNumber: number; status: string; branch: string; createdAt: string; duration?: number }[];
+  totalExecutions: number;
+}
+
+interface FlakyTest {
   key: string;
   title: string;
-  testType?: string | null;
-  status: string;
-  priority: string;
-  severity: string;
-  project: { name: string };
+  passed: number;
+  failed: number;
+  executions: number;
+  flakinessRate: number;
 }
 
-interface TestExecution {
-  id: string;
-  status: string;
-  createdAt: string;
-  testCase: { title: string; testType?: string | null };
-}
-
-interface Defect {
-  id: string;
-  title: string;
-  status: string;
-  severity: string;
-  createdAt: string;
+interface FlakyData {
+  flakyTests: FlakyTest[];
+  totalFlaky: number;
 }
 
 const TEST_TYPE_LABELS: Record<string, string> = {
@@ -55,28 +69,15 @@ const TEST_TYPE_LABELS: Record<string, string> = {
   GHERKIN: "Gherkin / BDD",
 };
 
-const SEVERITY_COLORS: Record<string, string> = {
-  CRITICAL: "status-fail",
-  HIGH: "status-blocked",
-  MEDIUM: "status-flaky",
-  LOW: "status-pass",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  OPEN: "status-fail",
-  IN_PROGRESS: "status-blocked",
-  RESOLVED: "status-pass",
-  CLOSED: "status-flaky",
-};
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tooltipFormatter = (value: any, name: any) => [value, name];
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [executions, setExecutions] = useState<TestExecution[]>([]);
-  const [defects, setDefects] = useState<Defect[]>([]);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [coverage, setCoverage] = useState<Coverage | null>(null);
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
+  const [flakyData, setFlakyData] = useState<FlakyData | null>(null);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -85,24 +86,23 @@ export default function AnalyticsPage() {
     let mounted = true;
     (async () => {
       try {
-        const [casesRes, execRes, defectRes] = await Promise.all([
-          fetch("/api/v1/test-cases"),
-          fetch("/api/v1/test-runs"),
-          fetch("/api/v1/defects"),
+        const [ovRes, covRes, trendRes, flakyRes] = await Promise.all([
+          fetch("/api/v1/analytics/overview"),
+          fetch("/api/v1/analytics/coverage"),
+          fetch("/api/v1/analytics/trends"),
+          fetch("/api/v1/analytics/flaky-tests"),
         ]);
-        const casesData = await casesRes.json();
-        const execData = await execRes.json();
-        const defectData = await defectRes.json();
+        const ov = await ovRes.json();
+        const cov = await covRes.json();
+        const trend = await trendRes.json();
+        const flaky = await flakyRes.json();
 
         if (!mounted) return;
 
-        const caseList = Array.isArray(casesData) ? casesData : casesData?.items ?? [];
-        const execList = (Array.isArray(execData) ? execData : execData?.items ?? []) as TestExecution[];
-        const defectList = Array.isArray(defectData) ? defectData : defectData?.items ?? [];
-
-        setTestCases(caseList);
-        setExecutions(execList);
-        setDefects(defectList);
+        setOverview(ov);
+        setCoverage(cov);
+        setTrendData(trend);
+        setFlakyData(flaky);
       } catch {
         // metrics load failed, keep defaults
       } finally {
@@ -141,66 +141,21 @@ export default function AnalyticsPage() {
     }
   }
 
-  function getStatusBadge(status: string) {
-    const norm = status?.toUpperCase() || "";
-    const className = STATUS_COLORS[norm] || "status-neutral";
-    return <span className={`badge ${className} text-xs`}>{status}</span>;
-  }
+  const types = coverage?.typeCoverage.map((t) => ({
+    type: t.type,
+    count: t.count,
+    label: TEST_TYPE_LABELS[t.type] || t.type,
+  })) ?? [];
 
-  function getSeverityBadge(severity: string) {
-    const norm = severity?.toUpperCase() || "";
-    const className = SEVERITY_COLORS[norm] || "status-neutral";
-    return <span className={`badge ${className} text-xs`}>{severity}</span>;
-  }
+  const trend = trendData?.trend ?? [];
+  const maxTrendCount = Math.max(...trend.map((t) => t.total), 1);
 
-  function typeDistribution(): { type: string; count: number; label: string }[] {
-    const map = new Map<string, number>();
-    testCases.forEach((tc) => {
-      const t = tc.testType || "UNLABELED";
-      map.set(t, (map.get(t) || 0) + 1);
-    });
-    return Array.from(map.entries()).map(([type, count]) => ({
-      type,
-      count,
-      label: TEST_TYPE_LABELS[type] || type,
-    }));
-  }
-
-  function defectLifecycle(): { status: string; count: number }[] {
-    const map = new Map<string, number>();
-    const order = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
-    defects.forEach((d) => {
-      const s = d.status?.toUpperCase() || "UNKNOWN";
-      map.set(s, (map.get(s) || 0) + 1);
-    });
-    return order.map((s) => ({ status: s, count: map.get(s) || 0 }));
-  }
-
-  function executionTrend(): { date: string; passed: number; failed: number }[] {
-    const map = new Map<string, { passed: number; failed: number }>();
-    executions.forEach((e) => {
-      const date = e.createdAt?.slice(0, 10) || "unknown";
-      if (!map.has(date)) map.set(date, { passed: 0, failed: 0 });
-      const cur = map.get(date)!;
-      if (e.status === "PASSED") cur.passed++;
-      else if (e.status === "FAILED") cur.failed++;
-    });
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, counts]) => ({ date, ...counts }));
-  }
-
-  const types = typeDistribution();
-  const lifecycle = defectLifecycle();
-  const trend = executionTrend();
-  const maxTrendCount = Math.max(...trend.map((t) => t.passed + t.failed), 1);
-
-  const totalExec = executions.length;
-  const passedCount = executions.filter((e) => e.status === "PASSED").length;
-  const failedCount = executions.filter((e) => e.status === "FAILED").length;
-  const passRate = totalExec > 0 ? Math.round((passedCount / totalExec) * 100) : 0;
-  const autoTestCases = testCases.filter((tc) => tc.testType === "UI_AUTOMATION").length;
-  const totalCases = testCases.length;
+  const totalExec = overview?.totalExecutions ?? 0;
+  const passedCount = overview?.passedExecutions ?? 0;
+  const failedCount = overview?.failedExecutions ?? 0;
+  const passRate = overview?.passRate ?? 0;
+  const autoTestCases = types.filter((t) => t.type === "UI_AUTOMATION").reduce((sum, t) => sum + t.count, 0);
+  const totalCases = overview?.totalTestCases ?? 0;
 
   if (loading) {
     return (
@@ -249,9 +204,9 @@ export default function AnalyticsPage() {
         </div>
         <div className="card fade-in">
           <p className="text-xs text-[#5B6675] uppercase tracking-wider">Defects</p>
-          <p className="text-2xl font-semibold text-[#1B2430]">{defects.length}</p>
+          <p className="text-2xl font-semibold text-[#1B2430]">{overview?.totalDefects ?? 0}</p>
           <p className="text-xs text-[#5B6675] mt-1">
-            {lifecycle.find((l) => l.status === "OPEN")?.count || 0} open
+            {overview?.openDefects ?? 0} open
           </p>
         </div>
       </div>
@@ -314,30 +269,32 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {/* Recent Defects */}
+        {/* Recent CI Runs */}
         <div className="card fade-in h-full">
-          <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Recent defects</h3>
-          {defects.length === 0 ? (
-            <p className="text-sm text-[#5B6675]">No defects found.</p>
+          <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Recent CI/CD Runs</h3>
+          {trendData?.ciRuns.length === 0 ? (
+            <p className="text-sm text-[#5B6675]">No CI/CD runs recorded.</p>
           ) : (
             <div className="space-y-2">
-              {defects.slice(0, 8).map((d) => (
-                <div key={d.id} className="flex flex-col gap-1 p-2 border border-[#C9D0D8] rounded table-row-hover">
+              {trendData?.ciRuns.slice(0, 8).map((r) => (
+                <div key={r.id} className="flex flex-col gap-1 p-2 border border-[#C9D0D8] rounded table-row-hover">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-[#1B2430]">{d.title}</span>
-                    {getSeverityBadge(d.severity)}
+                    <span className="text-xs font-medium text-[#1B2430]">{r.pipelineName} #{r.buildNumber}</span>
+                    <span className={`badge text-xs ${r.status === "PASSED" ? "status-pass" : r.status === "FAILED" ? "status-fail" : "status-neutral"}`}>
+                      {r.status}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#5B6675]">{d.id.slice(0, 8)}</span>
-                    {getStatusBadge(d.status)}
+                    <span className="text-xs text-[#5B6675]">{r.branch}</span>
+                    <span className="text-xs text-[#5B6675]">{r.duration ? r.duration + "s" : "—"}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
-          {defects.length > 8 && (
-            <Link href="/defects" className="btn-link text-xs block mt-3">
-              View all {defects.length} defects
+          {trendData && trendData.ciRuns.length > 8 && (
+            <Link href="/ci-cd" className="btn-link text-xs block mt-3">
+              View all {trendData.ciRuns.length} CI runs
             </Link>
           )}
         </div>
@@ -372,28 +329,28 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="card fade-in">
-          <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Defect lifecycle</h3>
-          {lifecycle.every((l) => l.count === 0) ? (
-            <p className="text-sm text-[#5B6675]">No defects in any lifecycle stage.</p>
+          <h3 className="text-sm font-semibold text-[#1B2430] mb-4">Allure Reports</h3>
+          {coverage?.allureSummary.length === 0 ? (
+            <p className="text-sm text-[#5B6675]">No Allure reports ingested.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={lifecycle} margin={{ top: 4, right: 24, left: 0, bottom: 24 }}>
-                <XAxis dataKey="status" tick={{ fontSize: 11, fill: "#5B6675" }} tickFormatter={(v: string) => v.replace("_", " ").toLowerCase()} />
-                <YAxis hide />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
-                  formatter={tooltipFormatter}
-                  labelStyle={{ fontSize: 12 }}
-                />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                  {lifecycle.map((l) => (
-                    <Cell key={l.status} fill={LIFECYCLE_COLORS[l.status] ?? "#6B7280"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-3">
+              {coverage?.allureSummary.map((r) => (
+                <div key={r.id} className="flex items-center gap-3">
+                  <span className="w-32 text-xs text-[#5B6675] truncate">{r.name}</span>
+                  <div className="flex-1 progress-bar">
+                    <div
+                      className="progress-bar-fill bg-[#1F6F8B]"
+                      style={{ width: `${r.passRate}%` }}
+                    />
+                  </div>
+                  <span className="w-16 text-xs text-[#5B6675] text-right">{r.passRate}%</span>
+                </div>
+              ))}
+            </div>
           )}
-          <p className="text-xs text-[#5B6675] mt-3">Total defects: {defects.length}</p>
+          <p className="text-xs text-[#5B6675] mt-3">
+            {overview?.allureReports ?? 0} report(s) ingested
+          </p>
         </div>
       </div>
 
@@ -453,7 +410,7 @@ export default function AnalyticsPage() {
             </button>
           </div>
           <p className="text-xs text-[#5B6675] mt-2">
-            {totalCases} test cases, {totalExec} executions, {defects.length} defects. Pass rate: {passRate}%
+            {totalCases} test cases, {totalExec} executions, {overview?.totalDefects ?? 0} defects. Pass rate: {passRate}%
           </p>
         </div>
       </div>
