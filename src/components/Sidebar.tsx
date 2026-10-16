@@ -67,7 +67,6 @@ const navItems: NavItem[] = [
       { name: "Audit Logs", href: "/audit-logs", icon: <ClipboardIcon /> },
     ],
   },
-  { name: "Reports", href: "/reports", icon: <ReportsIcon /> },
   {
     name: "Workspace",
     href: "/organisations",
@@ -127,7 +126,7 @@ export default function Sidebar() {
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                 }}`}
               >
-                <span className="w-5 text-center">{item.icon}</span>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
                 {item.name}
               </Link>
             );
@@ -144,7 +143,7 @@ export default function Sidebar() {
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                 }}`}
               >
-                <span className="w-5 text-center">{item.icon}</span>
+                 <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
                 <span>{item.name}</span>
                 <span
                   className={`transform transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
@@ -174,7 +173,7 @@ export default function Sidebar() {
                             : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                         }}`}
                       >
-                        <span className="w-4 text-center">{child.icon}</span>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{child.icon}</span>
                         {child.name}
                       </Link>
                     );
