@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createDefect } from "@/app/actions";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import { FIELD_LIMITS } from "@/lib/validation";
 
 export default async function DefectsPage() {
   const [defects, testCases, users] = await Promise.all([
@@ -20,12 +21,12 @@ export default async function DefectsPage() {
         title="Defects"
         description="Track and link defects to test cases and runs."
         actions={
-          <form action={createDefect} className="flex flex-col lg:flex-row lg:items-center gap-2">
-            <input name="title" placeholder="Defect title" className="input w-48" required />
+          <form action={createDefect} className="flex flex-col lg:flex-row lg:items-end gap-2">
+            <input name="title" placeholder="Defect title" maxLength={FIELD_LIMITS.title} className="input w-48" required />
             <select name="severity" className="input">
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
+              {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((s) => (
+                <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>
+              ))}
             </select>
             <select name="reporterId" className="input">
               <option value="">Reporter</option>

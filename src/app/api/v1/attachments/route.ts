@@ -5,11 +5,34 @@ import { join } from "path";
 import { randomUUID } from "crypto";
 
 const UPLOAD_DIR = join(process.cwd(), "uploads");
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = new Set([
+  ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp",
+  ".pdf", ".json", ".zip", ".md", ".csv", ".txt",
+  ".log", ".xml", ".yaml", ".yml",
+]);
+const ALLOWED_MIME_PREFIXES = ["image/", "application/pdf", "application/json", "application/zip", "application/xml", "text/", "application/x-yaml", "application/x-gzip"];
+const DANGEROUS_EXTENSIONS = new Set([".exe", ".bat", ".cmd", ".com", ".sh", ".ps1", ".vbs", ".js", ".jar", ".msi", ".scr", ".pif"]);
 
 function ensureUploadDir() {
   if (!existsSync(UPLOAD_DIR)) {
     mkdirSync(UPLOAD_DIR, { recursive: true });
   }
+}
+
+function getExtension(filename: string): string {
+  return filename.slice(filename.lastIndexOf(".")).toLowerCase();
+}
+
+function isSafeFile(file: File): string | null {
+  const ext = getExtension(file.name);
+  if (DANGEROUS_EXTENSIONS.has(ext)) return `File type "${ext}" is not allowed`;
+  if (!ALLOWED_EXTENSIONS.has(ext) && file.type) {
+    if (!ALLOWED_MIME_PREFIXES.some((prefix) => file.type.startsWith(prefix))) {
+      return `File type "${file.type}" is not allowed`;
+    }
+  }
+  return null;
 }
 
 export async function GET() {
@@ -40,13 +63,19 @@ export async function POST(req: Request) {
     if (!uploadedById) {
       return error("uploadedById is required", 400);
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
       return error("File size exceeds 10MB limit", 413);
     }
 
+    const fileCheck = isSafeFile(file);
+    if (fileCheck) {
+      return error(fileCheck, 400);
+    }
+
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filename = `${randomUUID()}-${file.name.replace(/\s+/g, "_")}`;
+    const filename = `${randomUUID()}-${sanitizedName}`;
     const path = join(UPLOAD_DIR, filename);
     writeFileSync(path, buffer);
 

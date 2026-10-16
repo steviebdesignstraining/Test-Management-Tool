@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { updateTestCase } from "@/app/actions";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import { ValidatedInput } from "@/components/ValidatedInput";
+import { FIELD_LIMITS } from "@/lib/validation";
 
 export default async function TestCaseEditPage({
   params,
@@ -38,87 +40,116 @@ export default async function TestCaseEditPage({
         }
       />
 
-      <div className="max-w-2xl space-y-4">
+      <div className="max-w-2xl space-y-6">
         <form action={updateTestCase} className="space-y-6">
           <input type="hidden" name="id" value={testCase.id} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Key</label>
-              <input name="key" defaultValue={testCase.key} className="input" required />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Title</label>
-              <input name="title" defaultValue={testCase.title} className="input" required />
-            </div>
+            <ValidatedInput
+              label="Key"
+              name="key"
+              maxLength={FIELD_LIMITS.key}
+              initialValue={testCase.key}
+              required
+            />
+            <ValidatedInput
+              label="Title"
+              name="title"
+              maxLength={FIELD_LIMITS.title}
+              initialValue={testCase.title}
+              required
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Description</label>
-            <textarea name="description" defaultValue={testCase.description ?? ""} className="input h-24" />
-          </div>
+          <ValidatedInput
+            label="Description"
+            name="description"
+            as="textarea"
+            rows={4}
+            maxLength={FIELD_LIMITS.description}
+            initialValue={testCase.description ?? ""}
+          />
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Objective</label>
-            <textarea name="objective" defaultValue={testCase.objective ?? ""} className="input h-24" />
-          </div>
+          <ValidatedInput
+            label="Objective"
+            name="objective"
+            as="textarea"
+            rows={4}
+            maxLength={FIELD_LIMITS.objective}
+            initialValue={testCase.objective ?? ""}
+          />
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Preconditions</label>
-            <textarea name="preconditions" defaultValue={testCase.preconditions ?? ""} className="input h-24" />
-          </div>
+          <ValidatedInput
+            label="Preconditions"
+            name="preconditions"
+            as="textarea"
+            rows={4}
+            maxLength={FIELD_LIMITS.preconditions}
+            initialValue={testCase.preconditions ?? ""}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Priority</label>
               <select name="priority" className="input">
-                <option value="HIGH" selected={testCase.priority === "HIGH"}>High</option>
-                <option value="MEDIUM" selected={testCase.priority === "MEDIUM"}>Medium</option>
-                <option value="LOW" selected={testCase.priority === "LOW"}>Low</option>
+                {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((p) => (
+                  <option key={p} value={p} selected={testCase.priority === p}>
+                    {p.charAt(0) + p.slice(1).toLowerCase()}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Status</label>
               <select name="status" className="input">
-                <option value="DRAFT" selected={testCase.status === "DRAFT"}>Draft</option>
-                <option value="REVIEW" selected={testCase.status === "REVIEW"}>Review</option>
-                <option value="APPROVED" selected={testCase.status === "APPROVED"}>Approved</option>
-                <option value="ARCHIVED" selected={testCase.status === "ARCHIVED"}>Archived</option>
+                {["DRAFT", "REVIEW", "APPROVED", "ARCHIVED"].map((s) => (
+                  <option key={s} value={s} selected={testCase.status === s}>
+                    {s.charAt(0) + s.slice(1).toLowerCase()}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Test type</label>
               <select name="testType" className="input">
                 <option value="">— Manual —</option>
-                <option value="UI_AUTOMATION" selected={testCase.testType === "UI_AUTOMATION"}>UI Automation</option>
-                <option value="API" selected={testCase.testType === "API"}>API</option>
-                <option value="DATABASE" selected={testCase.testType === "DATABASE"}>Database</option>
-                <option value="SECURITY" selected={testCase.testType === "SECURITY"}>Security</option>
-                <option value="PERFORMANCE" selected={testCase.testType === "PERFORMANCE"}>Performance</option>
-                <option value="ACCESSIBILITY" selected={testCase.testType === "ACCESSIBILITY"}>Accessibility</option>
-                <option value="BACKEND" selected={testCase.testType === "BACKEND"}>Backend</option>
-                <option value="FRONTEND" selected={testCase.testType === "FRONTEND"}>Frontend</option>
-                <option value="GHERKIN" selected={testCase.testType === "GHERKIN"}>Gherkin / BDD</option>
+                {["UI_AUTOMATION", "API", "DATABASE", "SECURITY", "PERFORMANCE", "ACCESSIBILITY", "BACKEND", "FRONTEND", "GHERKIN"].map((t) => (
+                  <option key={t} value={t} selected={testCase.testType === t}>
+                    {t.replace(/_/g, " ")}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           {testCase.testType === "GHERKIN" && (
             <div className="space-y-2">
-              <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Gherkin scenario</label>
+              <label className="flex items-center justify-between">
+                <span className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Gherkin scenario</span>
+                <span className="text-xs text-[#5B6675]">
+                  {(testCase.gherkinText ?? "").length}/{FIELD_LIMITS.gherkinText}
+                </span>
+              </label>
               <textarea
                 name="gherkinText"
                 defaultValue={testCase.gherkinText ?? ""}
+                maxLength={FIELD_LIMITS.gherkinText}
                 className="input h-40 font-mono text-xs"
-                placeholder="Feature: ...&#10;  Scenario: ...&#10;    Given ...&#10;    When ...&#10;    Then ..."
+                placeholder="Feature: ...
+  Scenario: ...
+    Given ...
+    When ...
+    Then ..."
               />
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Component</label>
-            <input name="component" defaultValue={testCase.component ?? ""} className="input" />
-          </div>
+          <ValidatedInput
+            label="Component"
+            name="component"
+            maxLength={FIELD_LIMITS.component}
+            initialValue={testCase.component ?? ""}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">

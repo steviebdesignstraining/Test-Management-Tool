@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import { FIELD_LIMITS } from "@/lib/validation";
 
 export default async function RequirementsPage() {
   const [requirements, projects, users] = await Promise.all([
@@ -37,8 +38,8 @@ export default async function RequirementsPage() {
             }}
             className="flex flex-col lg:flex-row lg:items-center gap-2"
           >
-            <input name="key" placeholder="Key (e.g. REQ-001)" className="input w-40" required />
-            <input name="title" placeholder="Title" className="input flex-1" required />
+            <input name="key" placeholder="Key (e.g. REQ-001)" maxLength={FIELD_LIMITS.key} className="input w-40" required />
+            <input name="title" placeholder="Title" maxLength={FIELD_LIMITS.title} className="input flex-1" required />
             <select name="projectId" className="input">
               <option value="">Project</option>
               {projects.map((p) => (

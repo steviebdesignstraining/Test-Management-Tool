@@ -2,11 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { sanitizeInput, FIELD_LIMITS } from "@/lib/validation";
 
 export async function createProject(formData: FormData) {
   const name = formData.get("name") as string;
   const org = await prisma.organisation.findFirst();
-  await prisma.project.create({ data: { name, description: "", organisationId: org?.id || "" } });
+  await prisma.project.create({ data: { name: sanitizeInput(name), description: "", organisationId: org?.id || "" } });
   revalidatePath("/projects");
 }
 
@@ -22,10 +23,15 @@ export async function createTestCase(formData: FormData) {
     throw new Error("Key, title, project and owner are required");
   }
 
+  const cleanKey = sanitizeInput(key).slice(0, FIELD_LIMITS.key);
+  const cleanTitle = sanitizeInput(title).slice(0, FIELD_LIMITS.title);
+  const cleanTestId = testType ? sanitizeInput(testType) : undefined;
+  const cleanGherkin = gherkinText ? sanitizeInput(gherkinText).slice(0, FIELD_LIMITS.gherkinText) : undefined;
+
   await prisma.testCase.upsert({
-    where: { key },
-    update: { title, projectId, ownerId, status: "DRAFT", testType: testType || null, gherkinText: gherkinText || null },
-    create: { key, title, projectId, ownerId, status: "DRAFT", testType: testType || null, gherkinText: gherkinText || null },
+    where: { key: cleanKey },
+    update: { title: cleanTitle, projectId, ownerId, status: "DRAFT", testType: cleanTestId || null, gherkinText: cleanGherkin || null },
+    create: { key: cleanKey, title: cleanTitle, projectId, ownerId, status: "DRAFT", testType: cleanTestId || null, gherkinText: cleanGherkin || null },
   });
   revalidatePath("/test-cases");
 }
@@ -33,7 +39,7 @@ export async function createTestCase(formData: FormData) {
 export async function createTestPlan(formData: FormData) {
   const name = formData.get("name") as string;
   const projectId = formData.get("projectId") as string;
-  await prisma.testPlan.create({ data: { name, description: "", projectId } });
+  await prisma.testPlan.create({ data: { name: sanitizeInput(name), description: "", projectId } });
   revalidatePath("/test-plans");
 }
 
@@ -50,7 +56,15 @@ export async function createDefect(formData: FormData) {
   const severity = formData.get("severity") as string;
   const reporterId = formData.get("reporterId") as string;
   const testCaseId = formData.get("testCaseId") as string || undefined;
-  await prisma.defect.create({ data: { title, severity, reporterId, testCaseId, status: "OPEN" } });
+  await prisma.defect.create({
+    data: {
+      title: sanitizeInput(title),
+      severity,
+      reporterId,
+      testCaseId,
+      status: "OPEN",
+    },
+  });
   revalidatePath("/defects");
 }
 
@@ -133,16 +147,16 @@ export async function updateTestCase(formData: FormData) {
   await prisma.testCase.update({
     where: { id },
     data: {
-      title,
-      description: description || null,
-      objective: objective || null,
-      preconditions: preconditions || null,
+      title: sanitizeInput(title).slice(0, FIELD_LIMITS.title),
+      description: description ? sanitizeInput(description).slice(0, FIELD_LIMITS.description) : null,
+      objective: objective ? sanitizeInput(objective).slice(0, FIELD_LIMITS.objective) : null,
+      preconditions: preconditions ? sanitizeInput(preconditions).slice(0, FIELD_LIMITS.preconditions) : null,
       priority,
       severity,
       status,
-      component: component || null,
-      testType: testType || null,
-      gherkinText: gherkinText || null,
+      component: component ? sanitizeInput(component).slice(0, FIELD_LIMITS.component) : null,
+      testType: testType ? sanitizeInput(testType) : null,
+      gherkinText: gherkinText ? sanitizeInput(gherkinText) : null,
       projectId,
       ownerId,
     },
@@ -163,7 +177,13 @@ export async function addTestStep(formData: FormData) {
   }
 
   await prisma.testStep.create({
-    data: { testCaseId, action, expectedResult, data: data || null, position },
+    data: {
+      testCaseId,
+      action: sanitizeInput(action).slice(0, FIELD_LIMITS.description),
+      expectedResult: sanitizeInput(expectedResult).slice(0, FIELD_LIMITS.description),
+      data: data ? sanitizeInput(data) : null,
+      position,
+    },
   });
   revalidatePath(`/test-cases/${testCaseId}`);
 }
@@ -182,7 +202,12 @@ export async function updateTestStep(formData: FormData) {
 
   await prisma.testStep.update({
     where: { id },
-    data: { action, expectedResult, data: data || null, position },
+    data: {
+      action: sanitizeInput(action).slice(0, FIELD_LIMITS.description),
+      expectedResult: sanitizeInput(expectedResult).slice(0, FIELD_LIMITS.description),
+      data: data ? sanitizeInput(data) : null,
+      position,
+    },
   });
   revalidatePath(`/test-cases/${testCaseId}`);
 }
@@ -338,7 +363,7 @@ export async function saveUserSettings(formData: FormData) {
       blockOnCriticalFailures,
       aiProvider,
       aiModel,
-      integrationConfigs: (Object.keys(integrationConfigs).length > 0 ? integrationConfigs : null) as any,
+      integrationConfigs: Object.keys(integrationConfigs).length > 0 ? integrationConfigs as never : undefined,
     },
     create: {
       userId,
@@ -350,7 +375,7 @@ export async function saveUserSettings(formData: FormData) {
       blockOnCriticalFailures,
       aiProvider,
       aiModel,
-      integrationConfigs: (Object.keys(integrationConfigs).length > 0 ? integrationConfigs : null) as any,
+      integrationConfigs: Object.keys(integrationConfigs).length > 0 ? integrationConfigs as never : undefined,
     },
   });
 
@@ -540,15 +565,15 @@ export async function createDefectWithTicket(formData: FormData) {
 
   await prisma.defect.create({
     data: {
-      title,
-      description: description || null,
+      title: sanitizeInput(title).slice(0, FIELD_LIMITS.title),
+      description: description ? sanitizeInput(description).slice(0, FIELD_LIMITS.description) : null,
       severity,
       reporterId,
       testCaseId: testCaseId || null,
       testExecutionId: testExecutionId || null,
       assigneeId: assigneeId || null,
-      externalTicketId: externalTicketId || null,
-      externalTicketUrl: externalTicketUrl || null,
+      externalTicketId: externalTicketId ? sanitizeInput(externalTicketId).slice(0, 100) : null,
+      externalTicketUrl: externalTicketUrl ? sanitizeInput(externalTicketUrl).slice(0, 500) : null,
     },
   });
   revalidatePath("/defects");
@@ -572,14 +597,14 @@ export async function updateDefect(formData: FormData) {
   await prisma.defect.update({
     where: { id },
     data: {
-      title,
-      description: description || null,
+      title: sanitizeInput(title).slice(0, FIELD_LIMITS.title),
+      description: description ? sanitizeInput(description).slice(0, FIELD_LIMITS.description) : null,
       severity,
       priority,
       status,
       assigneeId: assigneeId || null,
-      externalTicketId: externalTicketId || null,
-      externalTicketUrl: externalTicketUrl || null,
+      externalTicketId: externalTicketId ? sanitizeInput(externalTicketId).slice(0, 100) : null,
+      externalTicketUrl: externalTicketUrl ? sanitizeInput(externalTicketUrl).slice(0, 500) : null,
     },
   });
   revalidatePath(`/defects/${id}`);

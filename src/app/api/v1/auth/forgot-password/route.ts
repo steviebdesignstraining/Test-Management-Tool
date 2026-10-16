@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
 import { generateToken, rateLimit, auditLog, getClientIp } from "@/lib/auth";
 import { sendEmail, resetPasswordEmailHtml, resetPasswordEmailText } from "@/lib/email";
+import { sanitizeInput, validateEmail } from "@/lib/validation";
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -18,7 +19,13 @@ export async function POST(req: Request) {
       return error("Email is required", 400);
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.valid && emailCheck.error) {
+      return error("Please enter a valid email address", 400);
+    }
+
+    const cleanEmail = sanitizeInput(String(email)).toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (!user) {
       // Don't reveal whether an account exists.
       return json({
@@ -34,23 +41,21 @@ export async function POST(req: Request) {
       });
     }
 
-    // Invalidate any existing reset tokens for this user.
     await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
 
     const token = generateToken();
     await prisma.passwordResetToken.create({
       data: {
-        identifier: email,
+        identifier: cleanEmail,
         token,
         expires: new Date(Date.now() + RESET_TTL_MS),
         userId: user.id,
       },
     });
 
-    // Send password reset email (non-blocking).
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3001";
     void sendEmail({
-      to: email,
+      to: cleanEmail,
       subject: "Reset your password",
       html: resetPasswordEmailHtml(token, baseUrl),
       text: resetPasswordEmailText(token, baseUrl),
@@ -61,7 +66,7 @@ export async function POST(req: Request) {
       action: "USER.PASSWORD_RESET_REQUESTED",
       entity: "User",
       entityId: user.id,
-      metadata: { email },
+      metadata: { email: cleanEmail },
       ip,
     });
 

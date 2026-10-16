@@ -382,16 +382,17 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
-          <div className="mt-3 flex gap-2">
-            <input
-              type="text"
-              placeholder="Ask a question…"
-              className="input flex-1"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              disabled={sending}
-            />
+           <div className="mt-3 flex gap-2">
+             <input
+               type="text"
+               placeholder="Ask a question…"
+               className="input flex-1"
+               maxLength={2000}
+               value={input}
+               onChange={(e) => setInput(e.target.value.slice(0, 2000))}
+               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+               disabled={sending}
+             />
             <button
               className="btn-primary px-3 py-2"
               onClick={sendMessage}

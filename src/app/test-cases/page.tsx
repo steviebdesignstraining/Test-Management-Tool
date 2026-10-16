@@ -3,6 +3,7 @@ import { createTestCase, deleteTestCase, bulkDeleteTestCases } from "@/app/actio
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import BulkDeleteButton from "./BulkDeleteButton";
+import { FIELD_LIMITS } from "@/lib/validation";
 
 export default async function TestCasesPage() {
   const [testCases, projects, users] = await Promise.all([
@@ -45,8 +46,8 @@ export default async function TestCasesPage() {
           actions={
             <div className="flex flex-col lg:flex-row lg:items-center gap-2">
               <form action={createTestCase} className="flex flex-col lg:flex-row lg:items-center gap-2">
-                <input name="key" placeholder="Key (e.g. TC-001)" className="input w-40" required />
-                <input name="title" placeholder="Title" className="input flex-1" required />
+                <input name="key" placeholder="Key (e.g. TC-001)" maxLength={FIELD_LIMITS.key} className="input w-40" required />
+                <input name="title" placeholder="Title" maxLength={FIELD_LIMITS.title} className="input flex-1" required />
                 <select name="projectId" className="input">
                   <option value="">Project</option>
                   {projects.map((p) => (

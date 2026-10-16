@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
+import { sanitizeInput } from "@/lib/validation";
 
 
 export async function GET(
@@ -25,7 +26,13 @@ export async function POST(
       return error("Action, expectedResult and position are required", 400);
     }
     const step = await prisma.testStep.create({
-      data: { testCaseId, action, expectedResult, data, position },
+      data: {
+        testCaseId,
+        action: sanitizeInput(String(action)),
+        expectedResult: sanitizeInput(String(expectedResult)),
+        data: data ? sanitizeInput(String(data)) : undefined,
+        position,
+      },
     });
     return json(step, 201);
   } catch {

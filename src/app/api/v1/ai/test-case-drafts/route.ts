@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
 import { generateContent, buildTestCaseDraftPrompt } from "@/lib/gemini";
+import { sanitizeInput, FIELD_LIMITS } from "@/lib/validation";
 
 export async function POST(req: Request) {
   try {
     const { projectId, feature, acceptanceCriteria } = await req.json();
+
+    const cleanFeature = feature ? sanitizeInput(String(feature)).slice(0, FIELD_LIMITS.description) : "";
+    const cleanCriteria = acceptanceCriteria ? sanitizeInput(String(acceptanceCriteria)).slice(0, FIELD_LIMITS.description) : undefined;
 
     let projectName = "TestHub";
     let existingCases = "";
@@ -23,8 +27,8 @@ export async function POST(req: Request) {
 
     const prompt = buildTestCaseDraftPrompt({
       projectName,
-      feature: feature || "",
-      acceptanceCriteria: acceptanceCriteria || undefined,
+      feature: cleanFeature,
+      acceptanceCriteria: cleanCriteria,
       existingCases: existingCases || undefined,
     });
 

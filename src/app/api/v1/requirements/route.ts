@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { json, error, paginated } from "@/lib/api-response";
+import { sanitizeInput } from "@/lib/validation";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "20");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "20")));
   const skip = (page - 1) * pageSize;
   const projectId = searchParams.get("projectId") || undefined;
 
@@ -30,7 +31,16 @@ export async function POST(req: Request) {
     }
 
     const requirement = await prisma.requirement.create({
-      data: { key, title, description, type, priority, status, projectId, ownerId },
+      data: {
+        key: sanitizeInput(String(key)),
+        title: sanitizeInput(String(title)),
+        description: description ? sanitizeInput(String(description)) : undefined,
+        type,
+        priority,
+        status,
+        projectId,
+        ownerId,
+      },
       include: { project: true, owner: true },
     });
     return json(requirement, 201);

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
+import { sanitizeInput, FIELD_LIMITS } from "@/lib/validation";
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +20,11 @@ export async function POST(req: Request) {
 
     let parsedSteps: { action: string; expectedResult: string; data?: string }[] = [];
     try {
-      parsedSteps = JSON.parse(stepsRaw || "[]");
+      parsedSteps = JSON.parse(stepsRaw || "[]").map((s: { action: string; expectedResult: string; data?: string }) => ({
+        action: sanitizeInput(String(s.action ?? "")).slice(0, FIELD_LIMITS.description),
+        expectedResult: sanitizeInput(String(s.expectedResult ?? "")).slice(0, FIELD_LIMITS.description),
+        data: s.data ? sanitizeInput(String(s.data)) : undefined,
+      }));
     } catch {
       parsedSteps = [];
     }
@@ -34,9 +39,9 @@ export async function POST(req: Request) {
     const testCase = await prisma.testCase.create({
       data: {
         key,
-        title,
-        objective: objective || null,
-        preconditions: preconditions || null,
+        title: sanitizeInput(title).slice(0, FIELD_LIMITS.title),
+        objective: objective ? sanitizeInput(objective).slice(0, FIELD_LIMITS.objective) : null,
+        preconditions: preconditions ? sanitizeInput(preconditions).slice(0, FIELD_LIMITS.preconditions) : null,
         priority,
         severity: priority,
         status: "DRAFT",

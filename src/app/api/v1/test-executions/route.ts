@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { json, error, paginated } from "@/lib/api-response";
+import { sanitizeInput } from "@/lib/validation";
+
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const testCaseId = searchParams.get("testCaseId");
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "20");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "20")));
   const skip = (page - 1) * pageSize;
 
   const where = testCaseId ? { testCaseId } : {};
@@ -45,10 +47,10 @@ export async function POST(req: Request) {
       data: {
         testCaseId,
         status,
-        actualResult,
+        actualResult: actualResult ? sanitizeInput(String(actualResult)) : undefined,
         testerId,
-        environment,
-        build,
+        environment: environment ? sanitizeInput(String(environment)) : undefined,
+        build: build ? sanitizeInput(String(build)) : undefined,
         startedAt: startedAt ? new Date(startedAt) : undefined,
         endedAt: endedAt ? new Date(endedAt) : undefined,
       },

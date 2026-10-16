@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import { prisma } from "@/lib/prisma";
+import { FIELD_LIMITS } from "@/lib/validation";
+
+const FEATURE_LIMIT = 2000;
+const CRITERIA_LIMIT = 2000;
 
 interface DraftStep {
   action: string;
@@ -129,22 +132,30 @@ export default function AiAssistantPage() {
         <h2 className="text-sm font-semibold text-[#1B2430] mb-4">Generate from feature</h2>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Feature / description</label>
+            <label className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Feature / description *</span>
+              <span className="text-xs text-[#5B6675]">{feature.length}/{FEATURE_LIMIT}</span>
+            </label>
             <textarea
               className="input h-24"
+              maxLength={FEATURE_LIMIT}
               placeholder="Describe the feature or user story..."
               value={feature}
-              onChange={(e) => setFeature(e.target.value)}
+              onChange={(e) => setFeature(e.target.value.slice(0, FEATURE_LIMIT))}
               onClick={loadProjectData}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Acceptance criteria (optional)</label>
+            <label className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Acceptance criteria (optional)</span>
+              <span className="text-xs text-[#5B6675]">{acceptanceCriteria.length}/{CRITERIA_LIMIT}</span>
+            </label>
             <textarea
               className="input h-20"
+              maxLength={CRITERIA_LIMIT}
               placeholder="Given ... When ... Then ..."
               value={acceptanceCriteria}
-              onChange={(e) => setAcceptanceCriteria(e.target.value)}
+              onChange={(e) => setAcceptanceCriteria(e.target.value.slice(0, CRITERIA_LIMIT))}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

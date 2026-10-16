@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { addTestStep, updateTestStep, deleteTestStep, uploadExecutionAttachment } from "@/app/actions";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import { FIELD_LIMITS } from "@/lib/validation";
 
 export default async function TestCaseDetailPage({
   params,
@@ -101,11 +102,11 @@ export default async function TestCaseDetailPage({
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Action</label>
-              <input name="action" placeholder="Step action" className="input" required />
+              <input name="action" placeholder="Step action" maxLength={FIELD_LIMITS.description} className="input" required />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Expected result</label>
-              <input name="expectedResult" placeholder="Expected result" className="input" required />
+              <input name="expectedResult" placeholder="Expected result" maxLength={FIELD_LIMITS.description} className="input" required />
             </div>
                 <button className="btn-primary w-full text-xs px-3 py-1.5">Add step</button>
               </div>
@@ -130,8 +131,8 @@ export default async function TestCaseDetailPage({
                       <form action={updateTestStep} className="inline-flex items-end gap-1">
                         <input type="hidden" name="id" value={step.id} />
                         <input type="hidden" name="testCaseId" value={testCaseId} />
-                        <input name="action" defaultValue={step.action} className="input w-24 text-xs" />
-                        <input name="expectedResult" defaultValue={step.expectedResult} className="input w-24 text-xs" />
+                        <input name="action" defaultValue={step.action} maxLength={FIELD_LIMITS.description} className="input w-24 text-xs" />
+                        <input name="expectedResult" defaultValue={step.expectedResult} maxLength={FIELD_LIMITS.description} className="input w-24 text-xs" />
                         <input name="position" type="number" defaultValue={String(step.position)} className="input w-12 text-xs" />
                         <button className="btn-link text-xs">Save</button>
                       </form>

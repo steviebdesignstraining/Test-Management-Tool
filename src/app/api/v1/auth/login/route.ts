@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
 import bcrypt from "bcryptjs";
 import { createSession, rateLimit, auditLog, getClientIp } from "@/lib/auth";
+import { sanitizeInput } from "@/lib/validation";
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
@@ -17,12 +18,14 @@ export async function POST(req: Request) {
       return error("Email and password are required", 400);
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const cleanEmail = sanitizeInput(String(email)).toLowerCase().trim();
+
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (!user || !user.passwordHash) {
       await auditLog({
         action: "USER.LOGIN_FAILED",
         entity: "User",
-        metadata: { email, reason: "invalid_credentials" },
+        metadata: { email: cleanEmail, reason: "invalid_credentials" },
         ip,
       });
       return error("Invalid email or password.", 401);
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
         action: "USER.LOGIN_FAILED",
         entity: "User",
         entityId: user.id,
-        metadata: { email, reason: "invalid_credentials" },
+        metadata: { email: cleanEmail, reason: "invalid_credentials" },
         ip,
       });
       return error("Invalid email or password.", 401);
@@ -47,7 +50,7 @@ export async function POST(req: Request) {
         action: "USER.LOGIN_BLOCKED_UNVERIFIED",
         entity: "User",
         entityId: user.id,
-        metadata: { email },
+        metadata: { email: cleanEmail },
         ip,
       });
       return error("Please verify your email before signing in.", 403);
@@ -60,7 +63,7 @@ export async function POST(req: Request) {
       action: "USER.LOGIN",
       entity: "User",
       entityId: user.id,
-      metadata: { email },
+      metadata: { email: cleanEmail },
       ip,
     });
 
