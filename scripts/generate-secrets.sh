@@ -44,6 +44,7 @@ NEON_BRANCH="production"
 # Neon AI Gateway (placeholder - enable if you have a paid Neon plan)
 NEON_AI_GATEWAY_URL="https://gateway.neon.tech/ai/v1"
 NEON_AI_GATEWAY_API_KEY="CHANGE_ME"
+NEON_API_KEY="$(rand_b64 32)"
 
 # GitHub App / OAuth
 GITHUB_APP_ID="CHANGE_ME"
@@ -94,10 +95,15 @@ cat > "$ENV_FILE" << EOF
 DATABASE_URL="${DATABASE_URL}"
 DATABASE_URL_UNPOOLED="${DATABASE_URL_UNPOOLED}"
 NEON_BRANCH="${NEON_BRANCH}"
+NEON_API_KEY="CHANGE_ME"
 
 # --- Neon AI Gateway (paid plan required) ---
 NEON_AI_GATEWAY_URL="${NEON_AI_GATEWAY_URL}"
 NEON_AI_GATEWAY_API_KEY="${NEON_AI_GATEWAY_API_KEY}"
+
+# --- Gemini AI ---
+GEMINI_API_KEY="CHANGE_ME"
+GEMINI_MODEL="gemini-2.0-flash"
 
 # --- Auth / Session ---
 AUTH_SECRET="${AUTH_SECRET}"
@@ -135,6 +141,7 @@ AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
 AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
 AWS_S3_BUCKET="${AWS_S3_BUCKET}"
 AWS_REGION="${AWS_REGION}"
+USE_S3="false"
 
 # --- SMTP Email ---
 SMTP_HOST="${SMTP_HOST}"
@@ -151,18 +158,24 @@ echo "Secrets written to $ENV_FILE"
 echo ""
 echo "IMPORTANT NEXT STEPS:"
 echo "1. Replace all CHANGE_ME values with real credentials."
-echo "2. Add the following secrets to your GitHub repository or CI/CD platform:"
+echo "2. Add the following secrets to your GitHub repository (Settings > Secrets and variables > Actions):"
 echo "   - DATABASE_URL"
 echo "   - DATABASE_URL_UNPOOLED"
+echo "   - NEON_API_KEY"
 echo "   - AUTH_SECRET"
+echo "   - GEMINI_API_KEY"
+echo "   - ENCRYPTION_KEY"
 echo "   - GITHUB_APP_PRIVATE_KEY"
 echo "   - GITHUB_APP_CLIENT_SECRET"
 echo "   - GITHUB_APP_WEBHOOK_SECRET"
 echo "   - JIRA_API_TOKEN"
 echo "   - AZURE_DEVOPS_PERSONAL_ACCESS_TOKEN"
 echo "   - AWS_SECRET_ACCESS_KEY"
-echo "   - ENCRYPTION_KEY"
-echo "3. Run 'npm run db:migrate' (or equivalent) to apply migrations."
-echo "4. Run 'npm run dev' to start the application."
+echo "3. Add the following variables to your GitHub repository (Settings > Secrets and variables > Actions > Variables):"
+echo "   - NEXT_PUBLIC_APP_URL"
+echo "   - GEMINI_MODEL"
+echo "   - USE_S3"
+echo "4. Run 'npx prisma db push' (or 'npm run db:migrate') to apply migrations."
+echo "5. Run 'npm run dev' to start the application."
 echo ""
 echo "WARNING: Never commit $ENV_FILE to version control."
