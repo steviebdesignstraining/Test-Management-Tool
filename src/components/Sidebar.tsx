@@ -23,6 +23,8 @@ import {
   ProjectsIcon,
   UsersIcon,
   ClipboardIcon,
+  ShieldIcon,
+  GlobeIcon,
 } from "@/components/icons";
 
 interface NavItem {
@@ -53,6 +55,7 @@ const navItems: NavItem[] = [
     icon: <AutomationIcon />,
     children: [
       { name: "Automation", href: "/automation", icon: <AutomationIcon /> },
+      { name: "Environments", href: "/environments", icon: <GlobeIcon /> },
       { name: "CI/CD Runs", href: "/ci-cd", icon: <CiCdIcon /> },
       { name: "Reports / Allure", href: "/reports", icon: <ReportsIcon /> },
     ],
@@ -64,6 +67,7 @@ const navItems: NavItem[] = [
     icon: <AnalyticsIcon />,
     children: [
       { name: "Analytics / AI Insights", href: "/analytics", icon: <AnalyticsIcon /> },
+      { name: "Quality Gates", href: "/quality-gates", icon: <ShieldIcon /> },
       { name: "Audit Logs", href: "/audit-logs", icon: <ClipboardIcon /> },
     ],
   },

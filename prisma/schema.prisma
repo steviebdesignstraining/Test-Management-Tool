@@ -25,6 +25,7 @@ model User {
   organisationMembers    OrganisationMember[] @relation("organisationMembers")
   projectMembers         ProjectMember[]      @relation("projectMembers")
   ownedTestCases         TestCase[]           @relation("TestCase_owner")
+  ownedEnvironments      Environment[]        @relation("Environment_owner")
   testExecutionsAsTester TestExecution[]      @relation("TestExecution_tester")
   reportedDefects        Defect[]             @relation("Defect_reporter")
   assignedDefects        Defect[]             @relation("Defect_assignee")
@@ -78,13 +79,15 @@ model Project {
   members                ProjectMember[]         @relation("projectMembers")
   roles                  ProjectRole[]           @relation("ProjectRole_project")
   invitations            ProjectInvitation[]     @relation("ProjectInvitation_project")
-  testCases              TestCase[]              @relation("TestCase_project")
+    testCases              TestCase[]              @relation("TestCase_project")
   testPlans              TestPlan[]              @relation("TestPlan_project")
   requirements           Requirement[]           @relation("Requirement_project")
   apiCollections         ApiCollection[]         @relation("ApiCollection_project")
   thirdPartyIntegrations ThirdPartyIntegration[] @relation("ThirdPartyIntegration_project")
   allureReports          AllureReport[]          @relation("AllureReport_project")
   ciRuns                 CiRun[]                 @relation("CiRun_project")
+  environments           Environment[]           @relation("Environment_project")
+  qualityGates           QualityGate[]           @relation("QualityGate_project")
 }
 
 /// The ProjectMember model connects users to projects with a role.
@@ -99,6 +102,41 @@ model ProjectMember {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, projectId])
+}
+
+/// A QualityGate that must be satisfied before a workflow stage transition.
+model QualityGate {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  stage            String   @default("SUBMIT") // DRAFT, SUBMIT, APPROVE, EXECUTE, RELEASE
+  rules            String   @default("[]") // JSON array of rule definitions
+  isActive         Boolean  @default(true)
+  isBlocking       Boolean  @default(true)
+  project          Project  @relation("QualityGate_project", fields: [projectId], references: [id])
+  projectId        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([projectId, name])
+}
+
+/// An Environment represents a managed test environment (dev/QA/staging/prod).
+model Environment {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   @default("QA") // DEVELOPMENT, QA, STAGING, PRODUCTION, CUSTOM
+  baseUrl     String?
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE, MAINTENANCE, ARCHIVED
+  project     Project  @relation("Environment_project", fields: [projectId], references: [id])
+  projectId   String
+  owner       User?    @relation("Environment_owner", fields: [ownerId], references: [id])
+  ownerId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, name])
 }
 
 /// A TestCase represents a manual test case.
