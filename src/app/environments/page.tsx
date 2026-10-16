@@ -1,28 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
 import PageHeader from "@/components/PageHeader";
-import Link from "next/link";
-
-async function createEnvironment(formData: FormData) {
-  "use server";
-  const projectId = formData.get("projectId") as string;
-  const name = formData.get("name") as string;
-  if (!projectId || !name) return;
-  try {
-    await prisma.environment.create({
-      data: {
-        projectId,
-        name: name.trim(),
-        description: (formData.get("description") as string)?.trim() || null,
-        type: (formData.get("type") as string) || "QA",
-        baseUrl: (formData.get("baseUrl") as string)?.trim() || null,
-      },
-    });
-    revalidatePath("/environments");
-  } catch {
-    // swallow duplicates
-  }
-}
+import EnvironmentCreateModal from "@/components/EnvironmentCreateModal";
 
 export default async function EnvironmentsPage() {
   const environments = await prisma.environment.findMany({
@@ -37,35 +15,7 @@ export default async function EnvironmentsPage() {
         breadcrumb="Environments"
         title="Environments"
         description="Managed test environments (dev/QA/staging/production) linked to projects."
-        actions={
-          <form action={createEnvironment} className="flex flex-wrap items-center gap-2">
-            <select name="projectId" className="input w-40" required>
-              <option value="">Project</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <input
-              name="name"
-              placeholder="Env name"
-              className="input w-40"
-              required
-            />
-            <select name="type" className="input w-28">
-              <option value="DEVELOPMENT">Dev</option>
-              <option value="QA">QA</option>
-              <option value="STAGING">Staging</option>
-              <option value="PRODUCTION">Prod</option>
-              <option value="CUSTOM">Custom</option>
-            </select>
-            <input
-              name="baseUrl"
-              placeholder="Base URL"
-              className="input w-44"
-            />
-            <button className="btn-primary px-3">Create</button>
-          </form>
-        }
+        actions={<EnvironmentCreateModal projects={projects} />}
       />
 
       {environments.length === 0 ? (

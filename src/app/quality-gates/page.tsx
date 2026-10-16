@@ -1,30 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
 import PageHeader from "@/components/PageHeader";
-
-async function createQualityGate(formData: FormData) {
-  "use server";
-  const projectId = formData.get("projectId") as string;
-  const name = formData.get("name") as string;
-  if (!projectId || !name) return;
-  try {
-    await prisma.qualityGate.create({
-      data: {
-        projectId,
-        name: name.trim(),
-        description: (formData.get("description") as string)?.trim() || null,
-        stage: (formData.get("stage") as string) || "SUBMIT",
-        rules: JSON.stringify(
-          (formData.get("rules") as string || "").split("\n").filter(Boolean)
-        ),
-        isBlocking: formData.get("isBlocking") === "on",
-      },
-    });
-    revalidatePath("/quality-gates");
-  } catch {
-    // swallow duplicates
-  }
-}
+import QualityGateCreateModal from "@/components/QualityGateCreateModal";
 
 export default async function QualityGatesPage() {
   const gates = await prisma.qualityGate.findMany({
@@ -39,30 +15,7 @@ export default async function QualityGatesPage() {
         breadcrumb="Quality Gates"
         title="Quality Gates"
         description="Configurable preconditions that must be satisfied before workflow stage transitions."
-        actions={
-          <form action={createQualityGate} className="flex flex-wrap items-center gap-2">
-            <select name="projectId" className="input w-40" required>
-              <option value="">Project</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <input
-              name="name"
-              placeholder="Gate name"
-              className="input w-40"
-              required
-            />
-            <select name="stage" className="input w-28">
-              <option value="DRAFT">Draft</option>
-              <option value="SUBMIT">Submit</option>
-              <option value="APPROVE">Approve</option>
-              <option value="EXECUTE">Execute</option>
-              <option value="RELEASE">Release</option>
-            </select>
-            <button className="btn-primary px-3">Create</button>
-          </form>
-        }
+        actions={<QualityGateCreateModal projects={projects} />}
       />
 
       {gates.length === 0 ? (

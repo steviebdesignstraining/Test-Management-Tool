@@ -817,3 +817,48 @@ Only return valid JSON, no markdown fences or extra text.
 
   return draft;
 }
+
+export async function createEnvironment(formData: FormData) {
+  "use server";
+  const projectId = formData.get("projectId") as string;
+  const name = formData.get("name") as string;
+  if (!projectId || !name) return;
+  try {
+    await prisma.environment.create({
+      data: {
+        projectId,
+        name: name.trim(),
+        description: (formData.get("description") as string)?.trim() || null,
+        type: (formData.get("type") as string) || "QA",
+        baseUrl: (formData.get("baseUrl") as string)?.trim() || null,
+      },
+    });
+    revalidatePath("/environments");
+  } catch {
+    // swallow duplicates
+  }
+}
+
+export async function createQualityGate(formData: FormData) {
+  "use server";
+  const projectId = formData.get("projectId") as string;
+  const name = formData.get("name") as string;
+  if (!projectId || !name) return;
+  try {
+    await prisma.qualityGate.create({
+      data: {
+        projectId,
+        name: name.trim(),
+        description: (formData.get("description") as string)?.trim() || null,
+        stage: (formData.get("stage") as string) || "SUBMIT",
+        rules: JSON.stringify(
+          (formData.get("rules") as string || "").split("\n").filter(Boolean)
+        ),
+        isBlocking: formData.get("isBlocking") === "on",
+      },
+    });
+    revalidatePath("/quality-gates");
+  } catch {
+    // swallow duplicates
+  }
+}
