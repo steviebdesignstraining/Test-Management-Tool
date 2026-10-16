@@ -70,7 +70,7 @@ export default async function TestCaseEditPage({
   const { testCaseId } = await params;
   const testCase = await prisma.testCase.findUnique({
     where: { id: testCaseId },
-    include: { project: true, owner: true, reviewer: true, requirementLinks: { include: { requirement: true } } },
+    include: { project: true, owner: true, requirementLinks: { include: { requirement: true } } },
   });
 
   if (!testCase) {

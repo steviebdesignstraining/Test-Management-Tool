@@ -66,7 +66,7 @@ const EXECUTION_STATUSES = [
 export default async function TestCasesPage() {
   const [testCases, projects, users, testSuites] = await Promise.all([
     prisma.testCase.findMany({
-      include: { project: true, owner: true, reviewer: true, steps: { orderBy: { position: "asc" } } },
+      include: { project: true, owner: true, steps: { orderBy: { position: "asc" } } },
       orderBy: { updatedAt: "desc" },
     }),
     prisma.project.findMany({ orderBy: { name: "asc" } }),

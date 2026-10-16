@@ -16,7 +16,7 @@ export async function GET(req: Request) {
       skip,
       take: pageSize,
       where,
-      include: { project: true, owner: true, reviewer: true, steps: { orderBy: { position: "asc" } } },
+      include: { project: true, owner: true, steps: { orderBy: { position: "asc" } } },
       orderBy: { updatedAt: "desc" },
     }),
     prisma.testCase.count({ where }),
@@ -185,7 +185,7 @@ export async function POST(req: Request) {
         estimatedDuration: estimatedDuration ? parseInt(String(estimatedDuration), 10) : null,
         actualResult: actualResult ? sanitizeInput(String(actualResult)) : null,
       },
-      include: { project: true, owner: true, reviewer: true, steps: { orderBy: { position: "asc" } } },
+      include: { project: true, owner: true, steps: { orderBy: { position: "asc" } } },
     });
     return json(testCase, 201);
   } catch {

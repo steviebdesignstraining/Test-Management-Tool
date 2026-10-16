@@ -20,7 +20,6 @@ export default async function TestCaseDetailPage({
       executions: { include: { tester: true }, orderBy: { createdAt: "desc" } },
       project: true,
       owner: true,
-      reviewer: true,
       defects: true,
       versions: { orderBy: { version: "desc" }, include: { changedBy: { select: { name: true } } } },
       attachments: { include: { uploadedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
@@ -320,7 +319,7 @@ export default async function TestCaseDetailPage({
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Reviewer</p>
-                <p className="text-[#5B6675]">{testCase.reviewer?.name || "—"}</p>
+                <p className="text-[#5B6675]">{testCase.reviewerId || "—"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-[#5B6675] uppercase tracking-wider">Est. Duration</p>
