@@ -131,7 +131,7 @@ export default function Sidebar() {
                 }}`}
               >
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
-                {item.name}
+                <span className="truncate">{item.name}</span>
               </Link>
             );
           }
@@ -141,18 +141,16 @@ export default function Sidebar() {
               <button
                 type="button"
                 onClick={() => toggleGroup(item.name)}
-                className={`flex w-full items-center gap-3 justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "bg-[#E4F0F4] text-[#134F63]"
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                 }}`}
               >
-                 <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
-                <span>{item.name}</span>
-                <span
-                  className={`transform transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
-                >
-                  ▾
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
+                <span className="truncate">{item.name}</span>
+                <span className="ml-auto shrink-0 transform transition-transform duration-200 text-[#5B6675]">
+                  {isExpanded ? "▾" : "▸"}
                 </span>
               </button>
               <div
@@ -160,7 +158,7 @@ export default function Sidebar() {
                   isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                 }}`}
               >
-                <div className="ml-4 space-y-0.5 pt-0.5">
+                <div className="ml-7 space-y-0.5 pt-0.5">
                   {item.children?.map((child) => {
                     const childActive = pathname === child.href;
                     return (
@@ -171,14 +169,14 @@ export default function Sidebar() {
                           e.preventDefault();
                           router.push(child.href);
                         }}
-                        className={`flex items-center gap-3 block text-xs rounded-lg px-3 py-2 transition-all duration-200 ${
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                           childActive
                             ? "bg-[#E4F0F4] text-[#134F63] font-medium"
                             : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
                         }}`}
                       >
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{child.icon}</span>
-                        {child.name}
+                        <span className="truncate">{child.name}</span>
                       </Link>
                     );
                   })}
@@ -191,7 +189,7 @@ export default function Sidebar() {
 
       <div className="p-3 border-t border-[#C9D0D8]">
         <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430] transition-all duration-200">
-          <span className="w-5 text-center">☰</span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">☰</span>
           <span>Profile</span>
         </button>
       </div>
