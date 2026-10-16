@@ -1,4 +1,4 @@
-import PublicLayout from "@/components/PublicLayout";
+import PublicContentPage from "@/components/PublicContentPage";
 
 const features = [
   { title: "Test case management", description: "Create, organize, and maintain test cases with rich descriptions, preconditions, steps, and custom fields." },
@@ -14,29 +14,11 @@ const features = [
 
 export default function FeaturesPage() {
   return (
-    <PublicLayout>
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="text-center mb-16">
-          <span className="inline-block px-3 py-1 mb-6 text-xs font-semibold tracking-wider text-[#1F6F8B] bg-[#E4F0F4] rounded-full border border-[#B7D9E2]">
-            Features
-          </span>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-            Everything you need for quality engineering
-          </h1>
-          <p className="text-lg text-[#5B6675] max-w-2xl mx-auto leading-relaxed">
-            TestHub brings manual testing, automation, CI/CD results, defects, and AI insights into one workspace.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((f) => (
-            <div key={f.title} className="p-6 border border-[#C9D0D8] rounded-lg bg-white">
-              <h3 className="text-base font-semibold mb-3">{f.title}</h3>
-              <p className="text-sm text-[#5B6675] leading-relaxed">{f.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </PublicLayout>
+    <PublicContentPage
+      badge="Features"
+      title="Everything you need for quality engineering"
+      subtitle="TestHub brings manual testing, automation, CI/CD results, defects, and AI insights into one workspace."
+      items={features}
+    />
   );
 }

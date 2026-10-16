@@ -3,13 +3,6 @@ import PageHeader from "@/components/PageHeader";
 import { getCurrentUser } from "@/lib/auth-utils";
 import InviteForm from "@/components/invite-form";
 
-const ROLE_OPTIONS = [
-  { value: "OWNER", label: "Owner" },
-  { value: "MANAGER", label: "Manager" },
-  { value: "TESTER", label: "Tester" },
-  { value: "VIEWER", label: "Viewer" },
-];
-
 export default async function TeamPage() {
   const currentUser = await getCurrentUser();
 
@@ -56,11 +49,7 @@ export default async function TeamPage() {
         {projects.length === 0 ? (
           <p className="text-sm text-[#5B6675]">No projects available. Create a project first.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="md:col-span-3">
-              <InviteForm projectId={projects[0].id} />
-            </div>
-          </div>
+          <InviteForm projects={projects.map((p) => ({ id: p.id, name: p.name }))} />
         )}
       </div>
 

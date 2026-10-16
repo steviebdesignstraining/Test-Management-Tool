@@ -5,7 +5,7 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend, ReferenceLine,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
 
 const TYPE_COLORS = ["#1F6F8B", "#0A8043", "#8F2A20", "#F59E0B", "#6B46C1", "#D94E48", "#0EA5E9", "#6366F1"];
@@ -69,6 +69,9 @@ const STATUS_COLORS: Record<string, string> = {
   CLOSED: "status-flaky",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tooltipFormatter = (value: any, name: any) => [value, name];
+
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -118,11 +121,12 @@ export default function AnalyticsPage() {
     setSending(true);
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
 
+  const trimmedHistory = messages.slice(-20);
     try {
       const res = await fetch("/api/v1/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage, conversationHistory: messages }),
+        body: JSON.stringify({ message: userMessage, conversationHistory: trimmedHistory }),
       });
       const data = await res.json();
       const reply = data?.response || "Sorry, I couldn't generate a response.";
@@ -276,7 +280,7 @@ export default function AnalyticsPage() {
               </Pie>
               <Tooltip
                 contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
-                formatter={(value: any) => [value, "Tests"] as [any, string]}
+                formatter={tooltipFormatter}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -297,7 +301,7 @@ export default function AnalyticsPage() {
                 <YAxis hide />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
-                  formatter={(value: any) => [value, "Cases"] as [any, string]}
+                  formatter={tooltipFormatter}
                   labelStyle={{ fontSize: 12 }}
                 />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
@@ -353,7 +357,7 @@ export default function AnalyticsPage() {
                 <YAxis hide domain={[0, maxTrendCount]} />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
-                  formatter={(value: any) => [value, "Tests"] as [any, string]}
+                formatter={tooltipFormatter}
                   labelStyle={{ fontSize: 12 }}
                 />
                 <Legend verticalAlign="top" height={30} iconSize={10} />
@@ -378,7 +382,7 @@ export default function AnalyticsPage() {
                 <YAxis hide />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#fff", border: "1px solid #C9D0D8" }}
-                  formatter={(value: any) => [value, "Defects"] as [any, string]}
+                  formatter={tooltipFormatter}
                   labelStyle={{ fontSize: 12 }}
                 />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>

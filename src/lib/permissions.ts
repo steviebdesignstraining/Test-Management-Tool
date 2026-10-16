@@ -3,6 +3,17 @@ import { prisma } from "@/lib/prisma";
 export const ROLES = ["VIEWER", "TESTER", "MANAGER", "OWNER"] as const;
 export type Role = (typeof ROLES)[number];
 
+export const ROLE_OPTIONS = [
+  { value: "OWNER", label: "Owner" },
+  { value: "MANAGER", label: "Manager" },
+  { value: "TESTER", label: "Tester" },
+  { value: "VIEWER", label: "Viewer" },
+] as const;
+
+export function isValidRole(role: unknown): role is Role {
+  return typeof role === "string" && ROLES.includes(role.toUpperCase() as Role);
+}
+
 export const roleHierarchy: Record<Role, number> = {
   VIEWER: 0,
   TESTER: 1,

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { json, error, paginated } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/auth-utils";
+import { ROLE_OPTIONS, isValidRole } from "@/lib/permissions";
 
 export async function GET(
   req: Request,
@@ -32,8 +33,6 @@ export async function GET(
   return paginated(items, page, pageSize, total);
 }
 
-const PROJECT_ROLES = ["OWNER", "MANAGER", "TESTER", "VIEWER"];
-
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ projectId: string }> },
@@ -44,11 +43,12 @@ export async function POST(
   try {
     const { projectId } = await params;
     const { userId, role } = await req.json();
+    if (!userId) return error("userId is required", 400);
 
     const canManage = await canAccessProject(user.id, projectId, "OWNER");
     if (!canManage) return error("Only project owners can add members", 403);
 
-    const validRole = PROJECT_ROLES.includes(String(role).toUpperCase()) ? role.toUpperCase() : "TESTER";
+    const validRole = isValidRole(role) ? role.toUpperCase() : "TESTER";
 
     const member = await prisma.projectMember.create({
       data: { projectId, userId, role: validRole },
@@ -75,6 +75,13 @@ export async function DELETE(
 
     const canManage = await canAccessProject(user.id, projectId, "OWNER");
     if (!canManage) return error("Only project owners can remove members", 403);
+
+    if (userId === user.id) {
+      const otherOwners = await prisma.projectMember.count({
+        where: { projectId, role: "OWNER", userId: { not: userId } },
+      });
+      if (otherOwners === 0) return error("Cannot remove yourself as the sole owner", 409);
+    }
 
     await prisma.projectMember.delete({
       where: { userId_projectId: { userId, projectId } },
