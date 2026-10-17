@@ -1,8 +1,8 @@
+export const dynamic = "error";
 export const dynamicParams = false;
 export async function generateStaticParams() {
-  return [];
+  return [{ recommendationId: 'dummy' }];
 }
-export const dynamic = 'error';
 import { json } from "@/lib/api-response";
 
 export async function POST() {
