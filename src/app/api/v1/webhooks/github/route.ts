@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { json, error } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { verifyGithubSignature } from "@/lib/github-signature";

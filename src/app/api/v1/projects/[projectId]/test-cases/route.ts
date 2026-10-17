@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { json, error, paginated } from "@/lib/api-response";
 import { sanitizeInput } from "@/lib/validation";

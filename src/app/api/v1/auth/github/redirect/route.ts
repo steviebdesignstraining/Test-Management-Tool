@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { json, error } from "@/lib/api-response";
 
 export async function GET() {

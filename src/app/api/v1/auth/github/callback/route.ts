@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { error } from "@/lib/api-response";
 import { createSession } from "@/lib/auth";
