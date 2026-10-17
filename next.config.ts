@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
+const isStaticExport = process.env.GITHUB_ACTIONS === "true";
+
 const nextConfig: NextConfig = {
+  output: isStaticExport ? "export" : undefined,
+  images: {
+    unoptimized: true,
+  },
+  basePath: isStaticExport ? "/Test-Management-Tool" : "",
+  assetPrefix: isStaticExport ? "/Test-Management-Tool/" : "",
+  trailingSlash: true,
+
   async headers() {
     return [
       {
