@@ -1,8 +1,3 @@
-export const dynamic = "error";
-export const dynamicParams = false;
-export async function generateStaticParams() {
-  return [];
-}
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
 import jwt from "jsonwebtoken";
