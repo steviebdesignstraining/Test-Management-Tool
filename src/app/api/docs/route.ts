@@ -1,3 +1,4 @@
+export const dynamic = "force-static";
 import { openApiSpec } from "./spec";
 import { readFileSync } from "fs";
 import { join } from "path";
