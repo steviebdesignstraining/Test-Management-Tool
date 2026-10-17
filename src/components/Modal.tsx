@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 
 interface ModalProps {
   open: boolean;
@@ -13,11 +13,18 @@ interface ModalProps {
 export default function Modal({ open, onClose, title, children, className = "" }: ModalProps) {
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (open) {
       setMounted(true);
-      const raf = requestAnimationFrame(() => setVisible(true));
+      const raf = requestAnimationFrame(() => {
+        setVisible(true);
+        setTimeout(() => {
+          dialogRef.current?.focus();
+        }, 50);
+      });
       return () => cancelAnimationFrame(raf);
     }
     setVisible(false);
@@ -29,6 +36,25 @@ export default function Modal({ open, onClose, title, children, className = "" }
     if (!mounted) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
@@ -47,13 +73,15 @@ export default function Modal({ open, onClose, title, children, className = "" }
       }`}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? "modal-title" : undefined}
+      aria-labelledby={title ? titleId : undefined}
       onClick={onClose}
       style={{
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className={`relative w-full max-w-3xl max-h-[90vh] overflow-auto rounded-xl border border-[#C9D0D8] bg-white shadow-2xl transition-all duration-200 ${
           visible
             ? "scale-100 opacity-100 translate-y-0"
@@ -66,7 +94,7 @@ export default function Modal({ open, onClose, title, children, className = "" }
       >
         {title && (
           <div className="flex items-center justify-between border-b border-[#C9D0D8] px-5 py-4 bg-[#F5F7F9]">
-            <h2 id="modal-title" className="text-lg font-semibold text-[#1B2430]">
+            <h2 id={titleId} className="text-lg font-semibold text-[#1B2430]">
               {title}
             </h2>
             <button
