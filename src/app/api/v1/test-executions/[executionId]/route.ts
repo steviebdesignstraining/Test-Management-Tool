@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
@@ -31,4 +32,8 @@ export async function PATCH(
   } catch {
     return error("Failed to update execution", 500);
   }
+}
+
+export async function generateStaticParams() {
+  return [];
 }

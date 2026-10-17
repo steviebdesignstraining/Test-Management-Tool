@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { json, error, paginated } from "@/lib/api-response";
@@ -107,4 +108,8 @@ export async function canAccessProject(
   if (!member) return false;
   const userIdx = roleOrder.indexOf(member.role.toUpperCase());
   return userIdx >= minIdx;
+}
+
+export async function generateStaticParams() {
+  return [];
 }

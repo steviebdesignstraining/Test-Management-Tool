@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
@@ -37,4 +38,8 @@ export async function DELETE(
   const { testPlanId } = await params;
   await prisma.testPlan.delete({ where: { id: testPlanId } });
   return json({ ok: true });
+}
+
+export async function generateStaticParams() {
+  return [];
 }

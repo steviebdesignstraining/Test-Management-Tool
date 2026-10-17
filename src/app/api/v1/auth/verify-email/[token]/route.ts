@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
@@ -34,4 +35,8 @@ export async function GET(
   await prisma.verificationToken.delete({ where: { id: verification.id } });
 
   return json({ message: "Email verified successfully. You can sign in." });
+}
+
+export async function generateStaticParams() {
+  return [];
 }

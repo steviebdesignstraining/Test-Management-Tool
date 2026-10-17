@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { json } from "@/lib/api-response";
 
@@ -7,4 +8,8 @@ export async function GET() {
 
 export async function POST() {
   return json({ message: "Automation mapping endpoint" }, 201);
+}
+
+export async function generateStaticParams() {
+  return [];
 }

@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
@@ -58,4 +59,8 @@ export async function DELETE(
   } catch {
     return error("Failed to delete Allure report", 500);
   }
+}
+
+export async function generateStaticParams() {
+  return [];
 }
