@@ -1,3 +1,4 @@
+export const revalidate = 0;
 export const dynamic = "force-static";
 import { json } from "@/lib/api-response";
 
