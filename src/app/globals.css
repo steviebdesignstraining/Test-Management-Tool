@@ -53,7 +53,7 @@ body {
   color: var(--color-flaky-text);
 }
 
- .status-neutral {
+.status-neutral {
   background-color: var(--color-neutral-bg);
   color: var(--color-neutral-text);
 }
@@ -162,44 +162,41 @@ body {
   font-size: 0.875rem;
   background-color: var(--color-card);
   color: var(--color-ink);
-  outline: none;
-  height: 40px;
-  width: 100%;
 }
 
 .input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(31, 111, 139, 0.2);
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent-tint);
-}
-
-.page-padding {
-  padding: 28px;
 }
 
 .progress-bar {
-  height: 0.625rem;
+  height: 0.5rem;
+  width: 100%;
   border-radius: 9999px;
-  background-color: #EDF0F3;
-  overflow: hidden;
+  background-color: var(--color-neutral-bg);
 }
 
 .progress-bar-fill {
   height: 100%;
-  background-color: var(--color-accent);
+  border-radius: 9999px;
+  transition: width 0.4s ease-out;
 }
 
-.sample-badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 0.25rem;
-  background-color: var(--color-accent-tint);
-  padding-top: 0.125rem;
-  padding-bottom: 0.125rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-accent-dark);
+.progress-bar-fill.status-pass {
+  background-color: #4CAF7D;
+}
+
+.progress-bar-fill.status-fail {
+  background-color: #F28C87;
+}
+
+.progress-bar-fill.status-blocked {
+  background-color: #F5C266;
+}
+
+.progress-bar-fill.status-neutral {
+  background-color: #C9D0D8;
 }
 
 .badge {
@@ -276,8 +273,7 @@ body {
   transition: width 0.4s ease-out;
 }
 
-@layer base {
-  *:focus-visible {
-    @apply ring-2 ring-[#1F6F8B] ring-offset-2 outline-none;
-  }
+*:focus-visible {
+  outline: 2px solid #1F6F8B;
+  outline-offset: 2px;
 }

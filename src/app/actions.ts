@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import {
   sanitizeInput,
   FIELD_LIMITS,
@@ -1034,4 +1036,9 @@ export async function createQualityGate(formData: FormData) {
   } catch {
     // swallow duplicates
   }
+}
+
+export async function signOut() {
+  (await cookies()).delete("session");
+  redirect("/sign-in");
 }

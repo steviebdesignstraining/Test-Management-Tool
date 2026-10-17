@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   OverviewIcon,
   TestCasesIcon,
@@ -85,10 +85,28 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export default function Sidebar({ isCollapsed = false, onToggle, isMobile = false }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const newExpanded: Record<string, boolean> = {};
+    navItems.forEach((item) => {
+      if (item.children && item.children.some((c) => pathname.startsWith(c.href) || pathname.startsWith(item.href))) {
+        newExpanded[item.name] = true;
+      }
+    });
+    if (Object.keys(newExpanded).length > 0) {
+      setExpanded(newExpanded);
+    }
+  }, [pathname]);
 
   const toggleGroup = (name: string) => {
     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -96,17 +114,45 @@ export default function Sidebar() {
 
   const isChildActive = (item: NavItem) => {
     if (item.children) {
-      return item.children.some((c) => pathname === c.href);
+      return item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + "/"));
     }
-    return pathname === item.href;
+    return pathname === item.href || pathname.startsWith(item.href + "/");
   };
 
+  const ChevronLeft = () => (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+
+  const ChevronRight = () => (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  );
+
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 border-r border-[#C9D0D8] bg-white w-[232px]">
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 border-r border-[#C9D0D8] bg-white transition-all duration-300 ${
+        isCollapsed && !isMobile ? "w-[64px]" : "w-[232px]"
+      }`}
+    >
       <div className="flex h-14 items-center justify-between border-b border-[#C9D0D8] px-4">
         <Link href="/overview" className="flex items-center gap-2">
-          <span className="font-bold text-lg tracking-tight text-[#1F6F8B]">TestHub</span>
+          <span className="font-bold text-lg tracking-tight text-[#1F6F8B]">
+            {isCollapsed && !isMobile ? "TH" : "TestHub"}
+          </span>
         </Link>
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="rounded p-1.5 text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
@@ -121,17 +167,21 @@ export default function Sidebar() {
                 key={item.name}
                 href={item.href}
                 onClick={(e) => {
-                  e.preventDefault();
-                  router.push(item.href);
+                  if (isMobile && onToggle) {
+                    onToggle();
+                  }
                 }}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "bg-[#E4F0F4] text-[#134F63]"
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
-                }}`}
+                } ${isCollapsed && !isMobile ? "justify-center px-2" : ""}`}
+                title={isCollapsed && !isMobile ? item.name : undefined}
               >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
-                <span className="truncate">{item.name}</span>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">
+                  {item.icon}
+                </span>
+                {(!isCollapsed || isMobile) && <span className="truncate">{item.name}</span>}
               </Link>
             );
           }
@@ -145,53 +195,71 @@ export default function Sidebar() {
                   isActive
                     ? "bg-[#E4F0F4] text-[#134F63]"
                     : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
-                }}`}
+                } ${isCollapsed && !isMobile ? "justify-center px-2" : ""}`}
+                title={isCollapsed && !isMobile ? item.name : undefined}
               >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{item.icon}</span>
-                <span className="truncate">{item.name}</span>
-                <span className="ml-auto shrink-0 transform transition-transform duration-200 text-[#5B6675]">
-                  {isExpanded ? "▾" : "▸"}
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">
+                  {item.icon}
                 </span>
+                {(!isCollapsed || isMobile) && (
+                  <>
+                    <span className="truncate">{item.name}</span>
+                    <span className="ml-auto shrink-0 transform transition-transform duration-200 text-[#5B6675]">
+                      {isExpanded ? "▾" : "▸"}
+                    </span>
+                  </>
+                )}
               </button>
-              <div
-                className={`overflow-hidden transition-all duration-200 ${
-                  isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                }}`}
-              >
-                <div className="ml-7 space-y-0.5 pt-0.5">
-                  {item.children?.map((child) => {
-                    const childActive = pathname === child.href;
-                    return (
-                      <Link
-                        key={child.name}
-                        href={child.href}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          router.push(child.href);
-                        }}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                          childActive
-                            ? "bg-[#E4F0F4] text-[#134F63] font-medium"
-                            : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
-                        }}`}
-                      >
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">{child.icon}</span>
-                        <span className="truncate">{child.name}</span>
-                      </Link>
-                    );
-                  })}
+              {(!isCollapsed || isMobile) && (
+                <div
+                  className={`overflow-hidden transition-all duration-200 ${
+                    isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <div className="ml-7 space-y-0.5 pt-0.5">
+                    {item.children?.map((child) => {
+                      const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
+                      return (
+                        <Link
+                          key={child.name}
+                          href={child.href}
+                          onClick={(e) => {
+                            if (isMobile && onToggle) {
+                              onToggle();
+                            }
+                          }}
+                          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                            childActive
+                              ? "bg-[#E4F0F4] text-[#134F63] font-medium"
+                              : "text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+                          }`}
+                        >
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">
+                            {child.icon}
+                          </span>
+                          <span className="truncate">{child.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
       </nav>
 
       <div className="p-3 border-t border-[#C9D0D8]">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430] transition-all duration-200">
+        <Link
+          href="/profile"
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430] transition-all duration-200 ${
+            isCollapsed && !isMobile ? "justify-center px-2" : ""
+          }`}
+          title={isCollapsed && !isMobile ? "Profile" : undefined}
+        >
           <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">☰</span>
-          <span>Profile</span>
-        </button>
+          {(!isCollapsed || isMobile) && <span>Profile</span>}
+        </Link>
       </div>
     </aside>
   );

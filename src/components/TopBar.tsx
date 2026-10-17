@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+import { signOut } from "@/app/actions";
 
 const SearchIcon = () => (
   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -21,13 +23,43 @@ const ChevronDownIcon = () => (
   </svg>
 );
 
-export default function TopBar() {
+const MenuIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+interface TopBarProps {
+  onMobileMenuClick?: () => void;
+}
+
+export default function TopBar({ onMobileMenuClick }: TopBarProps) {
   const router = useRouter();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-[#C9D0D8] bg-white px-5">
-      <div className="flex items-center gap-4">
-        <div className="relative">
+    <header className="flex h-14 items-center justify-between border-b border-[#C9D0D8] bg-white px-3 md:px-5">
+      <div className="flex items-center gap-3 md:gap-4">
+        <button
+          type="button"
+          onClick={onMobileMenuClick}
+          className="lg:hidden rounded p-1.5 text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+          aria-label="Open navigation menu"
+        >
+          <MenuIcon />
+        </button>
+        <div className="relative hidden md:block">
           <select
             className="border border-[#C9D0D8] rounded px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-[#1F6F8B] outline-none"
             defaultValue="Checkout Web"
@@ -38,7 +70,7 @@ export default function TopBar() {
             <option>Design System</option>
           </select>
         </div>
-        <div className="relative w-64">
+        <div className="relative w-48 md:w-64">
           <input type="text" placeholder="Search…" className="input w-full pr-9" />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <SearchIcon />
@@ -46,16 +78,60 @@ export default function TopBar() {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <button className="rounded p-1.5 text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]" aria-label="Notifications">
-          <span className="sr-only">Notifications</span>
+        <Link
+          href="/notifications"
+          className="rounded p-1.5 text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+          aria-label="Notifications"
+        >
           <BellIcon />
-        </button>
-        <div className="flex items-center gap-2 border-l border-[#C9D0D8] pl-3">
-          <span className="text-xs font-medium text-[#1B2430]">Alex Rivera</span>
-          <button className="rounded p-1 text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]" aria-label="Profile menu">
-            <span className="sr-only">Profile menu</span>
+        </Link>
+        <div className="relative" ref={profileRef}>
+          <button
+            type="button"
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="flex items-center gap-2 border-l border-[#C9D0D8] pl-3 rounded hover:bg-[#EDF0F3] transition-colors"
+            aria-label="Profile menu"
+          >
+            <span className="text-xs font-medium text-[#1B2430]">Alex Rivera</span>
             <ChevronDownIcon />
           </button>
+          {profileOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-[#C9D0D8] bg-white shadow-lg z-50">
+              <div className="py-1">
+                <Link
+                  href="/profile"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-2 text-sm text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+                >
+                  Profile
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-2 text-sm text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+                >
+                  Settings
+                </Link>
+                <Link
+                  href="/docs"
+                  onClick={() => setProfileOpen(false)}
+                  className="block px-4 py-2 text-sm text-[#5B6675] hover:bg-[#EDF0F3] hover:text-[#1B2430]"
+                >
+                  Help
+                </Link>
+                <div className="border-t border-[#C9D0D8] mt-1">
+                  <form action={signOut}>
+                    <button
+                      type="submit"
+                      className="w-full text-left px-4 py-2 text-sm text-[#8F2A20] hover:bg-[#FBE7E4]"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
