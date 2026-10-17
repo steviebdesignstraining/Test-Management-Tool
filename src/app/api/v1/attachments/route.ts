@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { json, error } from "@/lib/api-response";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
-import { randomUUID } from "crypto";
+import { storageService } from "@/lib/storage";
+import { requireUser } from "@/lib/api-auth";
 
-const UPLOAD_DIR = join(process.cwd(), "uploads");
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set([
   ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp",
@@ -14,11 +13,7 @@ const ALLOWED_EXTENSIONS = new Set([
 const ALLOWED_MIME_PREFIXES = ["image/", "application/pdf", "application/json", "application/zip", "application/xml", "text/", "application/x-yaml", "application/x-gzip"];
 const DANGEROUS_EXTENSIONS = new Set([".exe", ".bat", ".cmd", ".com", ".sh", ".ps1", ".vbs", ".js", ".jar", ".msi", ".scr", ".pif"]);
 
-function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    mkdirSync(UPLOAD_DIR, { recursive: true });
-  }
-}
+
 
 function getExtension(filename: string): string {
   return filename.slice(filename.lastIndexOf(".")).toLowerCase();
@@ -36,8 +31,10 @@ function isSafeFile(file: File): string | null {
 }
 
 export async function GET() {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.res;
   try {
-    ensureUploadDir();
+
     const attachments = await prisma.attachment.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -50,8 +47,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.res;
   try {
-    ensureUploadDir();
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const testCaseId = (formData.get("testCaseId") as string) || undefined;
@@ -72,20 +71,15 @@ export async function POST(req: Request) {
       return error(fileCheck, 400);
     }
 
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `${randomUUID()}-${sanitizedName}`;
-    const path = join(UPLOAD_DIR, filename);
-    writeFileSync(path, buffer);
+    const uploaded = await storageService.upload(file);
 
     const attachment = await prisma.attachment.create({
       data: {
-        filename,
+        filename: uploaded.filename,
         originalName: file.name,
         mimeType: file.type || "application/octet-stream",
-        size: buffer.length,
-        path,
+        size: uploaded.size,
+        path: uploaded.storagePath,
         uploadedById,
         testCaseId: testCaseId ?? null,
       },

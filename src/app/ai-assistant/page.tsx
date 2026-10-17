@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import { FIELD_LIMITS } from "@/lib/validation";
 
 const FEATURE_LIMIT = 2000;
 const CRITERIA_LIMIT = 2000;
@@ -40,27 +39,42 @@ const TEST_TYPE_LABELS: Record<string, string> = {
 
 export default function AiAssistantPage() {
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-  const [users, setUsers] = useState<{ id: string; name: string | null }[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string | null; email: string } | null>(null);
   const [feature, setFeature] = useState("");
   const [acceptanceCriteria, setAcceptanceCriteria] = useState("");
   const [projectId, setProjectId] = useState("");
   const [testType, setTestType] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState("");
   const [imported, setImported] = useState(false);
 
-  const loadProjectData = async () => {
-    if (projects.length > 0) return;
-    const [pRes, uRes] = await Promise.all([
-      fetch("/api/v1/projects"),
-      fetch("/api/v1/me"),
-    ]);
-    const pData = await pRes.json();
-    const uData = await uRes.json();
-    setProjects(Array.isArray(pData) ? pData : pData?.items ?? []);
-    setUsers(uData?.users ?? []);
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingData(true);
+        setError("");
+        const [pRes, uRes] = await Promise.all([
+          fetch("/api/v1/projects"),
+          fetch("/api/v1/me"),
+        ]);
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          setProjects(Array.isArray(pData) ? pData : pData?.items ?? []);
+        }
+        if (uRes.ok) {
+          const uData = await uRes.json();
+          setCurrentUser(uData?.user ?? null);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load project data");
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const generateDraft = async () => {
     if (!feature || !projectId) {
@@ -91,7 +105,11 @@ export default function AiAssistantPage() {
 
   const importDraft = async () => {
     if (!draft || !projectId) return;
-    const ownerId = users[0]?.id || "";
+    const ownerId = currentUser?.id || "";
+    if (!ownerId) {
+      setError("No authenticated user found. Cannot import draft.");
+      return;
+    }
     const formData = new FormData();
     formData.append("title", draft.title);
     formData.append("objective", draft.objective || "");
@@ -107,7 +125,10 @@ export default function AiAssistantPage() {
         method: "POST",
         body: formData,
       });
-      if (!res.ok) throw new Error("Import failed");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Import failed");
+      }
       setImported(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
@@ -142,7 +163,6 @@ export default function AiAssistantPage() {
               placeholder="Describe the feature or user story..."
               value={feature}
               onChange={(e) => setFeature(e.target.value.slice(0, FEATURE_LIMIT))}
-              onClick={loadProjectData}
             />
           </div>
           <div className="space-y-2">
@@ -161,7 +181,7 @@ export default function AiAssistantPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-medium text-[#5B6675] uppercase tracking-wider">Project</label>
-              <select className="input w-full" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+              <select className="input w-full" value={projectId} onChange={(e) => setProjectId(e.target.value)} disabled={loadingData}>
                 <option value="">Select project</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -180,7 +200,7 @@ export default function AiAssistantPage() {
           </div>
         </div>
         <div className="flex gap-3 pt-4">
-          <button className="btn-primary" onClick={generateDraft} disabled={loading}>
+          <button className="btn-primary" onClick={generateDraft} disabled={loading || loadingData}>
             {loading ? "Generating…" : "Generate test case draft"}
           </button>
         </div>

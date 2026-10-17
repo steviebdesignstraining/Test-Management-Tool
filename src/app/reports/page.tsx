@@ -17,10 +17,10 @@ export default function ReportsPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="table-header">Report</th>
-              <th className="table-header">Run</th>
-              <th className="table-header">Status</th>
-              <th className="table-header text-right">Link</th>
+              <th className="table-header px-4 py-3">Report</th>
+              <th className="table-header px-4 py-3">Run</th>
+              <th className="table-header px-4 py-3">Status</th>
+              <th className="table-header px-4 py-3 text-right">Link</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">

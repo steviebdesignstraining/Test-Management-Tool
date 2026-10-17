@@ -3,9 +3,16 @@ import { json, error } from "@/lib/api-response";
 import { generateContent } from "@/lib/gemini";
 import type { GeminiMessage } from "@/lib/gemini";
 import { sanitizeInput, FIELD_LIMITS } from "@/lib/validation";
+import { requireUser, accessibleProjectIds, scope } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.res;
+  const rl = rateLimit(`ai-chat:${auth.user.id}`, { limit: 20, windowMs: 60_000 });
+  if (!rl.allowed) return error("Too many AI requests. Please wait a minute.", 429);
   try {
+    const inProjects = scope(await accessibleProjectIds(auth.user));
     const { message, conversationHistory } = await req.json();
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return error("A non-empty message is required", 400);
@@ -14,13 +21,13 @@ export async function POST(req: Request) {
     const cleanMessage = sanitizeInput(message.trim()).slice(0, FIELD_LIMITS.search);
 
     const [testCases, executions, defects] = await Promise.all([
-      prisma.testCase.count(),
-      prisma.testExecution.count(),
-      prisma.defect.count(),
+      prisma.testCase.count({ where: { projectId: inProjects } }),
+      prisma.testExecution.count({ where: { testCase: { projectId: inProjects } } }),
+      prisma.defect.count({ where: { testCase: { projectId: inProjects } } }),
     ]);
 
     const passedExecutions = await prisma.testExecution.count({
-      where: { status: "PASSED" },
+      where: { status: "PASSED", testCase: { projectId: inProjects } },
     });
     const passRate =
       executions > 0 ? Math.round((passedExecutions / executions) * 100) : 0;
@@ -66,6 +73,7 @@ Guidelines:
 
     return json({ response: text });
   } catch (err) {
-    return error(err instanceof Error ? err.message : "AI assistant failed", 500);
+    console.error("ai-chat failed", err);
+    return error("The AI assistant is unavailable right now.", 500);
   }
 }

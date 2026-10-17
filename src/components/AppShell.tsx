@@ -26,16 +26,16 @@ export default function AppShell({
   const isPublic = PUBLIC_PATHS.includes(pathname);
 
   return (
-    <body className={`min-h-full flex bg-[#F5F7F9] text-[#1B2430] ${isPublic ? "pl-0" : "pl-[232px]"}`}>
+    <>
       {!isPublic && (
         <Suspense fallback={null}>
           <Sidebar />
         </Suspense>
       )}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden ${!isPublic ? "pl-[232px]" : ""}`}>
         {!isPublic && <TopBar />}
         <main className="flex-1 overflow-y-auto p-[28px]">{children}</main>
       </div>
-    </body>
+    </>
   );
 }

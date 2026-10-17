@@ -552,28 +552,16 @@ export async function uploadAttachment(formData: FormData) {
     throw new Error("uploadedById is required");
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const fs = await import("fs");
-  const path = await import("path");
-  const { randomUUID } = await import("crypto");
-
-  const UPLOAD_DIR = path.join(process.cwd(), "uploads");
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  }
-
-  const filename = `${randomUUID()}-${file.name.replace(/\s+/g, "_")}`;
-  const filePath = path.join(UPLOAD_DIR, filename);
-  fs.writeFileSync(filePath, buffer);
+  const { storageService } = await import("@/lib/storage");
+  const uploaded = await storageService.upload(file);
 
   await prisma.attachment.create({
     data: {
-      filename,
+      filename: uploaded.filename,
       originalName: file.name,
       mimeType: file.type || "application/octet-stream",
-      size: buffer.length,
-      path: filePath,
+      size: uploaded.size,
+      path: uploaded.storagePath,
       uploadedById,
       testCaseId: testCaseId ?? null,
     },
@@ -920,28 +908,16 @@ export async function uploadExecutionAttachment(formData: FormData) {
     throw new Error("File and uploadedById are required");
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const fs = await import("fs");
-  const path = await import("path");
-  const { randomUUID } = await import("crypto");
-
-  const UPLOAD_DIR = path.join(process.cwd(), "uploads");
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  }
-
-  const filename = `${randomUUID()}-${file.name.replace(/\s+/g, "_")}`;
-  const filePath = path.join(UPLOAD_DIR, filename);
-  fs.writeFileSync(filePath, buffer);
+  const { storageService } = await import("@/lib/storage");
+  const uploaded = await storageService.upload(file);
 
   await prisma.attachment.create({
     data: {
-      filename,
+      filename: uploaded.filename,
       originalName: file.name,
       mimeType: file.type || "application/octet-stream",
-      size: buffer.length,
-      path: filePath,
+      size: uploaded.size,
+      path: uploaded.storagePath,
       uploadedById,
       testCaseId: testCaseId ?? null,
     },

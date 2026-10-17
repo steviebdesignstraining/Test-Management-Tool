@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getJwtSecret } from "@/lib/session";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
-
-const publicRoutes = ["/sign-in"];
+const publicRoutes = ["/sign-in", "/register", "/forgot-password", "/reset-password"];
 
 const roleHierarchy: Record<string, number> = {
   READ_ONLY: 0,
@@ -41,6 +40,17 @@ function roleLevel(role: string): number {
   return roleHierarchy[role] ?? 0;
 }
 
+function verifyToken(token: string): { userId: string; role?: string } | null {
+  try {
+    const secret = getJwtSecret();
+    const payload = jwt.verify(token, secret) as { userId: string; role?: string };
+    if (!payload || typeof payload.userId !== "string") return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("session")?.value;
@@ -48,13 +58,10 @@ export function middleware(request: NextRequest) {
   let userId: string | null = null;
   let userRole: string | null = null;
   if (token) {
-    try {
-      const payload = jwt.verify(token, JWT_SECRET) as { userId: string; role?: string };
+    const payload = verifyToken(token);
+    if (payload) {
       userId = payload.userId;
       userRole = payload.role ?? null;
-    } catch {
-      userId = null;
-      userRole = null;
     }
   }
 

@@ -57,11 +57,11 @@ export default async function TeamPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="table-header">Member</th>
-              <th className="table-header">Role</th>
-              <th className="table-header">Projects</th>
-              <th className="table-header">Status</th>
-              <th className="table-header text-right">Actions</th>
+              <th className="table-header px-4 py-3">Member</th>
+              <th className="table-header px-4 py-3">Role</th>
+              <th className="table-header px-4 py-3">Projects</th>
+              <th className="table-header px-4 py-3">Status</th>
+              <th className="table-header px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">

@@ -24,14 +24,14 @@ export default async function CiCdPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="table-header">Workflow</th>
-              <th className="table-header">Branch</th>
-              <th className="table-header">Commit</th>
-              <th className="table-header">Actor</th>
-              <th className="table-header">Status</th>
-              <th className="table-header">Tests</th>
-              <th className="table-header">Duration</th>
-              <th className="table-header text-right">Allure</th>
+              <th className="table-header px-4 py-3">Workflow</th>
+              <th className="table-header px-4 py-3">Branch</th>
+              <th className="table-header px-4 py-3">Commit</th>
+              <th className="table-header px-4 py-3">Actor</th>
+              <th className="table-header px-4 py-3">Status</th>
+              <th className="table-header px-4 py-3">Tests</th>
+              <th className="table-header px-4 py-3">Duration</th>
+              <th className="table-header px-4 py-3 text-right">Allure</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">

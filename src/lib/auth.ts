@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
 import { Prisma } from "@prisma/client";
+import { getJwtSecret } from "@/lib/session";
 
-const JWT_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 // In-memory rate limiter (per identifier): { key: { count, resetAt } }
@@ -15,7 +14,8 @@ export async function createSession(
   role?: string,
   keepSignedIn = false,
 ) {
-  const token = jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: "7d" });
+  const jwt = (await import("jsonwebtoken")).default;
+  const token = jwt.sign({ userId, role }, getJwtSecret(), { expiresIn: "7d" });
   const cookieStore = await cookies();
   cookieStore.set("session", token, {
     httpOnly: true,
@@ -89,5 +89,3 @@ export function getClientIp(request: Request): string | undefined {
   if (real) return real;
   return undefined;
 }
-
-export { JWT_SECRET, SESSION_MAX_AGE };

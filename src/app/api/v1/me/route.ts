@@ -3,7 +3,9 @@ import { json, error } from "@/lib/api-response";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = process.env.AUTH_SECRET || "dev-secret-change-me";
+import { getAuthSecret } from "@/lib/auth-secret";
+
+const JWT_SECRET = getAuthSecret();
 
 async function getUserFromRequest() {
   const cookieStore = await cookies();

@@ -31,12 +31,12 @@ export default async function AutomationPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-[#F5F7F9]">
             <tr>
-              <th className="table-header">Test case</th>
-              <th className="table-header">Script</th>
-              <th className="table-header">Confidence</th>
-              <th className="table-header">Source</th>
-              <th className="table-header">Verified</th>
-              <th className="table-header text-right">Action</th>
+              <th className="table-header px-4 py-3">Test case</th>
+              <th className="table-header px-4 py-3">Script</th>
+              <th className="table-header px-4 py-3">Confidence</th>
+              <th className="table-header px-4 py-3">Source</th>
+              <th className="table-header px-4 py-3">Verified</th>
+              <th className="table-header px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#C9D0D8]">
